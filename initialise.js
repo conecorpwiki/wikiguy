@@ -19,9 +19,7 @@ const {
 const {
     WIKIS,
     CATEGORY_WIKI_MAP,
-    STATUS_INTERVAL_MS,
-    RESTRICTED_GUILD_ID,
-    LB_WIKI_CHANNELS
+    STATUS_INTERVAL_MS
 } = require("./config.js");
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
@@ -90,10 +88,6 @@ function getWikiAndPage(messageContent, channelParentId) {
 client.on("messageCreate", async (message) => {
     if (message.author.bot) return;
 
-    if (message.guildId === RESTRICTED_GUILD_ID) {
-        if (!LB_WIKI_CHANNELS.includes(message.channelId)) return;
-    }
-
     const res = getWikiAndPage(message.content, message.channel.parentId);
     if (!res) return;
 
@@ -130,10 +124,6 @@ client.on("messageUpdate", async (oldMessage, newMessage) => {
     if (newMessage.author?.bot) return;
     if (oldMessage.content === newMessage.content) return;
     if (!responseMap.has(newMessage.id)) return;
-
-    if (newMessage.guildId === RESTRICTED_GUILD_ID) {
-        if (!LB_WIKI_CHANNELS.includes(newMessage.channelId)) return;
-    }
 
     const res = getWikiAndPage(newMessage.content, newMessage.channel.parentId);
     if (!res) return;

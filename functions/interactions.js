@@ -14,10 +14,7 @@ const {
 } = require("./commands.js");
 const {
     WIKIS,
-    toggleContribScore,
-    RESTRICTED_GUILD_ID,
-    LB_WIKI_CHANNELS,
-    LB_SPEEDRUN_CHANNELS
+    toggleContribScore
 } = require("../config.js");
 const { fetch } = require("./utils.js");
 
@@ -42,13 +39,6 @@ function pruneMap(map, maxSize = 1000) {
         const firstKey = map.keys().next().value;
         map.delete(firstKey);
     }
-}
-
-function buildChannelRestrictionReply(commandName, allowedChannels) {
-    if (!allowedChannels || allowedChannels.length === 0) {
-        return `The \`/${commandName}\` command is not configured for any channels.`;
-    }
-    return `The \`/${commandName}\` command is only allowed in these channels: ${allowedChannels.map(id => `<#${id}>`).join(', ')}`;
 }
 
 function sendInteractionError(interaction, error, tag) {
@@ -379,16 +369,6 @@ async function handleInteraction(interaction) {
     }
 
     if (!interaction.isCommand()) return;
-
-    // Server-specific channel restrictions
-    if (interaction.guildId === RESTRICTED_GUILD_ID) {
-        if (interaction.commandName === 'lbwiki' && !LB_WIKI_CHANNELS.includes(interaction.channelId)) {
-            return interaction.reply({ content: buildChannelRestrictionReply('lbwiki', LB_WIKI_CHANNELS), ephemeral: true }).catch(() => {});
-        }
-        if (interaction.commandName === 'lbspeedrun' && !LB_SPEEDRUN_CHANNELS.includes(interaction.channelId)) {
-            return interaction.reply({ content: buildChannelRestrictionReply('lbspeedrun', LB_SPEEDRUN_CHANNELS), ephemeral: true }).catch(() => {});
-        }
-    }
 
     if (interaction.commandName === 'lbwiki') {
         try {
