@@ -8,7 +8,17 @@ const fetch = async (...args) => {
         const module = await import("node-fetch");
         fetchInstance = module.default;
     }
-    return fetchInstance(...args);
+
+    let [urlOrRequest, options = {}] = args;
+    const newOptions = { ...options };
+
+    // Add a default 10s timeout if no signal is explicitly provided in options.
+    // This prevents hanging requests from leaking resources.
+    if (AbortSignal.timeout && !newOptions.signal) {
+        newOptions.signal = AbortSignal.timeout(10000);
+    }
+
+    return fetchInstance(urlOrRequest, newOptions);
 };
 
 module.exports = { fetch };

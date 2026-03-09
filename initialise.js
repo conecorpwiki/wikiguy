@@ -170,6 +170,7 @@ client.on("messageReactionAdd", async (reaction, user) => {
                 originalAuthorId = referencedMsg.author.id;
                 // Cache it for next time
                 botToAuthorMap.set(message.id, originalAuthorId);
+                pruneMap(botToAuthorMap);
             } catch (err) {
                 console.warn(`Failed to fetch referenced message ${message.reference.messageId} for bot message ${message.id}:`, err);
             }
