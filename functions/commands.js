@@ -51,8 +51,12 @@ const SR_CATEGORY_IDS = {
     INDIVIDUAL_LEVELS_LEGACY: 'xd1yxxzd'
 };
 
+const SR_ALL_MAPS_V12_VALUE = 'sr_all_maps_v12';
+const SR_ALL_MAPS_LOBBY_VALUE = 'sr_all_maps_lobby';
+
 const SR_CATEGORIES = [
-    { name: 'All maps', value: SR_CATEGORY_IDS.ALL_MAPS },
+    { name: 'All maps', value: SR_ALL_MAPS_V12_VALUE },
+    { name: 'All maps (Lobby)', value: SR_ALL_MAPS_LOBBY_VALUE },
     { name: 'Individual Recode maps', value: SR_CATEGORY_IDS.INDIVIDUAL_LEVELS_RECODE },
     { name: 'Individual pre-rewrite maps', value: SR_CATEGORY_IDS.INDIVIDUAL_LEVELS_LEGACY }
 ];
@@ -106,7 +110,8 @@ const SR_LEVELS = [
 ];
 
 const SR_VARIABLES = {
-    EVENTS: 'p85y11vl'
+    EVENTS: 'p85y11vl',
+    VERSIONS: 'ylq4gmvn'
 };
 
 const SR_EVENTS_CHOICES = [
@@ -122,7 +127,9 @@ const SB64_DEFAULTS = {
 };
 
 const SR_DEFAULTS = {
-    EVENTS: 'qkem56nq'
+    EVENTS: 'qkem56nq',
+    VERSION_V12: 'ln8w8p0l',
+    VERSION_LOBBY: '12vm002q'
 };
 
 const commands = [
@@ -276,6 +283,9 @@ module.exports = {
     SB64_LEVEL_IDS,
     SB64_VARIABLES,
     SB64_DEFAULTS,
+    SR_CATEGORY_IDS,
+    SR_ALL_MAPS_V12_VALUE,
+    SR_ALL_MAPS_LOBBY_VALUE,
     SR_VARIABLES,
     SR_DEFAULTS
 };
