@@ -1,7 +1,133 @@
 const { fetch } = require("./utils.js");
 const { ContainerBuilder, SectionBuilder, TextDisplayBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require("discord.js");
-const { SB64_CATEGORY_IDS, SB64_LEVEL_IDS } = require("./commands.js");
 const { WIKIS } = require("../config.js");
+
+const SB64_CATEGORY_IDS = {
+    ANY_PERCENT: 'z27jz052',
+    HUNDRED_PERCENT: 'jdzzxgxd',
+    HUNDRED_TWENTY_TWO_PERCENT: '8244zv32',
+    PER_LEVEL_OVERALL: 'q25660vk'
+};
+
+const SB64_LEVEL_IDS = {
+    W1_HUB: '920j3n7d',
+    W2_HUB: '9vmyj5q9',
+    W3_HUB: 'd406nrq9',
+    W4_HUB: 'd0k0l3m9',
+    W5_HUB: 'w6qvrepd',
+    STARBURST_GALAXY: '93q08m2w',
+    ALL_DELUXE: '9gy3mxk9'
+};
+
+const SB64_CATEGORIES = [
+    { name: 'Any%', value: SB64_CATEGORY_IDS.ANY_PERCENT },
+    { name: '100%', value: SB64_CATEGORY_IDS.HUNDRED_PERCENT },
+    { name: '122%', value: SB64_CATEGORY_IDS.HUNDRED_TWENTY_TWO_PERCENT },
+    { name: 'World 1 Hub + Breezy Plains', value: SB64_LEVEL_IDS.W1_HUB },
+    { name: 'World 2 Hub + Sunshine Beach', value: SB64_LEVEL_IDS.W2_HUB },
+    { name: 'World 3 Hub + Sodacan Canyon', value: SB64_LEVEL_IDS.W3_HUB },
+    { name: 'World 4 Hub + Freezy Fields', value: SB64_LEVEL_IDS.W4_HUB },
+    { name: 'World 5 Hub + Mechanical Museum', value: SB64_LEVEL_IDS.W5_HUB },
+    { name: 'Starburst Galaxy', value: SB64_LEVEL_IDS.STARBURST_GALAXY },
+    { name: 'All deluxe challenges', value: SB64_LEVEL_IDS.ALL_DELUXE }
+];
+
+const SB64_VARIABLES = {
+    CHARACTER: 'ylqxg938',
+    GLITCHES: 'gnx6d06n'
+};
+
+const SB64_CHARACTER_CHOICES = [
+    { name: 'Bloxxer', value: 'q65xzdvl' },
+    { name: 'Bloxera', value: 'qj74x37q' }
+];
+
+const SR_CATEGORY_IDS = {
+    ALL_MAPS: 'rkl63l6k',
+    INDIVIDUAL_LEVELS_RECODE: '9d8qwwwd',
+    INDIVIDUAL_LEVELS_LEGACY: 'xd1yxxzd'
+};
+
+const SR_ALL_MAPS_V12_VALUE = 'sr_all_maps_v12';
+const SR_ALL_MAPS_LOBBY_VALUE = 'sr_all_maps_lobby';
+
+const SR_CATEGORIES = [
+    { name: 'All maps', value: SR_ALL_MAPS_V12_VALUE },
+    { name: 'All maps (Lobby)', value: SR_ALL_MAPS_LOBBY_VALUE },
+    { name: 'Individual Recode maps', value: SR_CATEGORY_IDS.INDIVIDUAL_LEVELS_RECODE },
+    { name: 'Individual pre-rewrite maps', value: SR_CATEGORY_IDS.INDIVIDUAL_LEVELS_LEGACY }
+];
+
+const SR_LEVEL_IDS = {
+    ABANDONED_LAB: 'wkkp8rvw',
+    BEDROOM: 'wp7q8kzw',
+    FLOODED_CITY: 'we28mkrw',
+    JUNGLE_UNDERPASS: 'w6qojrgd',
+    LUCID_LANE: 'wlg7pxr9',
+    MAGMA_BOMB_BLITZ: 'd1j54v6d',
+    MARBLE_MANIA: 'dqz7o61d',
+    MIDNIGHT_RUSH: 'dqz1n61d',
+    RETRO_RACEWAY: '9zp4noow',
+    SKY_HIGH_ROPEWAY: '9m5j40ld',
+    SLIME_FACTORY: 'd7y326vd',
+    SODACAN_CANYON: 'wo723gy9',
+    SPACE_STATION: 'wj7evozw',
+    SUNSET_OASIS: 'd1j78n5d',
+    SURFERS_PARADISE: '95k8mvj9',
+    SWEET_SPEEDWAY: '9gy37kk9',
+    UNDERWATER_HIGHWAY: '9x1lxm1d',
+    WINTER_WONDERLAND: '9gy3vpj9',
+    LOBBY_EASY: 'wj75z50w',
+    LOBBY_MEDIUM: 'wo7060j9',
+    LOBBY_HARD: 'd1j727zd'
+};
+
+const SR_LEVELS = [
+    { name: 'Abandoned Lab', value: SR_LEVEL_IDS.ABANDONED_LAB },
+    { name: 'Bedroom', value: SR_LEVEL_IDS.BEDROOM },
+    { name: 'Flooded City', value: SR_LEVEL_IDS.FLOODED_CITY },
+    { name: 'Jungle Underpass', value: SR_LEVEL_IDS.JUNGLE_UNDERPASS },
+    { name: 'Lucid Lane', value: SR_LEVEL_IDS.LUCID_LANE },
+    { name: 'Magma Bomb Blitz', value: SR_LEVEL_IDS.MAGMA_BOMB_BLITZ },
+    { name: 'Marble Mania', value: SR_LEVEL_IDS.MARBLE_MANIA },
+    { name: 'Midnight Rush', value: SR_LEVEL_IDS.MIDNIGHT_RUSH },
+    { name: 'Retro Raceway', value: SR_LEVEL_IDS.RETRO_RACEWAY },
+    { name: 'Sky-High Ropeway', value: SR_LEVEL_IDS.SKY_HIGH_ROPEWAY },
+    { name: 'Slime Factory', value: SR_LEVEL_IDS.SLIME_FACTORY },
+    { name: 'Sodacan Canyon', value: SR_LEVEL_IDS.SODACAN_CANYON },
+    { name: 'Space Station', value: SR_LEVEL_IDS.SPACE_STATION },
+    { name: 'Sunset Oasis', value: SR_LEVEL_IDS.SUNSET_OASIS },
+    { name: "Surfer's Paradise", value: SR_LEVEL_IDS.SURFERS_PARADISE },
+    { name: 'Sweet Speedway', value: SR_LEVEL_IDS.SWEET_SPEEDWAY },
+    { name: 'Underwater Highway', value: SR_LEVEL_IDS.UNDERWATER_HIGHWAY },
+    { name: 'Winter Wonderland', value: SR_LEVEL_IDS.WINTER_WONDERLAND },
+    { name: 'Lobby Easy Time Trial', value: SR_LEVEL_IDS.LOBBY_EASY },
+    { name: 'Lobby Medium Time Trial', value: SR_LEVEL_IDS.LOBBY_MEDIUM },
+    { name: 'Lobby Hard Time Trial', value: SR_LEVEL_IDS.LOBBY_HARD }
+];
+
+const SR_VARIABLES = {
+    EVENTS: 'p85y11vl',
+    VERSIONS: 'ylq4gmvn'
+};
+
+const SR_EVENTS_CHOICES = [
+    { name: 'Raised Speed Cap', value: 'q75rpkv1' },
+    { name: 'Low Gravity', value: 'qoxd952q' },
+    { name: 'Raised Speed Cap + Low Gravity', value: 'qyzog9d1' }
+];
+
+const SB64_DEFAULTS = {
+    CHARACTER: '10v9vdjl',
+    GLITCHES_ON: 'qox3r45q',
+    GLITCHES_OFF: 'lmo4g581'
+};
+
+const SR_DEFAULTS = {
+    EVENTS: 'qkem56nq',
+    VERSION_V12: 'ln8w8p0l',
+    VERSION_LOBBY: '12vm002q'
+};
 
 const SB64_PER_LEVEL_CATEGORIES = new Set([
     SB64_LEVEL_IDS.W1_HUB,
@@ -176,4 +302,21 @@ async function handleSpeedrunRequest(interaction, gameKey, categoryId, levelId =
     }
 }
 
-module.exports = { handleSpeedrunRequest };
+module.exports = {
+    handleSpeedrunRequest,
+    SB64_CATEGORY_IDS,
+    SB64_LEVEL_IDS,
+    SB64_CATEGORIES,
+    SB64_VARIABLES,
+    SB64_CHARACTER_CHOICES,
+    SR_CATEGORY_IDS,
+    SR_ALL_MAPS_V12_VALUE,
+    SR_ALL_MAPS_LOBBY_VALUE,
+    SR_CATEGORIES,
+    SR_LEVEL_IDS,
+    SR_LEVELS,
+    SR_VARIABLES,
+    SR_EVENTS_CHOICES,
+    SB64_DEFAULTS,
+    SR_DEFAULTS
+};

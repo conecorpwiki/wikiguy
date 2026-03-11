@@ -5,8 +5,8 @@ const {
 } = require("./parse_page.js");
 const { handleFileRequest } = require("./parse_file.js");
 const { handleContribScoresRequest } = require("./contribscores.js");
-const { handleSpeedrunRequest } = require("./speedrun.js");
 const {
+    handleSpeedrunRequest,
     SB64_VARIABLES,
     SB64_DEFAULTS,
     SR_CATEGORY_IDS,
@@ -14,7 +14,7 @@ const {
     SR_ALL_MAPS_LOBBY_VALUE,
     SR_VARIABLES,
     SR_DEFAULTS
-} = require("./commands.js");
+} = require("./speedrun.js");
 const {
     WIKIS,
     toggleContribScore
