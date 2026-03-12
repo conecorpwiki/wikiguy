@@ -13,7 +13,8 @@ const {
     SR_ALL_MAPS_V12_VALUE,
     SR_ALL_MAPS_LOBBY_VALUE,
     SR_VARIABLES,
-    SR_DEFAULTS
+    SR_DEFAULTS,
+    ABJ_CATEGORIES
 } = require("./speedrun.js");
 
 const wikiChoices = Object.entries(WIKIS).map(([key, wiki]) => ({
@@ -78,6 +79,20 @@ const commands = [
                         type: 3, // STRING
                         required: false,
                         choices: SR_EVENTS_CHOICES
+                    }
+                ]
+            },
+            {
+                name: 'abj',
+                description: 'A Block\'s Journey\'s speedrun leaderboard',
+                type: 1, // SUB_COMMAND
+                options: [
+                    {
+                        name: 'category',
+                        description: 'The category to view',
+                        type: 3, // STRING
+                        required: true,
+                        choices: ABJ_CATEGORIES
                     }
                 ]
             }

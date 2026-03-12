@@ -129,6 +129,24 @@ const SR_DEFAULTS = {
     VERSION_LOBBY: '12vm002q'
 };
 
+const ABJ_CATEGORY_IDS = {
+    ALL_ORBS: 'jdr3v4gd',
+    MAXWELLS: 'jdzg9z3k',
+    ALL_WORLD_ORBS: 'ndxo96rd'
+};
+
+const ABJ_LEVEL_IDS = {
+    INK_FOREST: 'wo7lq1y9',
+    GEARSHOCK_BEACH: 'd1j68e6d'
+};
+
+const ABJ_CATEGORIES = [
+    { name: 'All Orbs', value: ABJ_CATEGORY_IDS.ALL_ORBS },
+    { name: 'Maxwells', value: ABJ_CATEGORY_IDS.MAXWELLS },
+    { name: 'Ink Forest', value: ABJ_LEVEL_IDS.INK_FOREST },
+    { name: 'Gearshock Beach', value: ABJ_LEVEL_IDS.GEARSHOCK_BEACH }
+];
+
 const SB64_PER_LEVEL_CATEGORIES = new Set([
     SB64_LEVEL_IDS.W1_HUB,
     SB64_LEVEL_IDS.W2_HUB,
@@ -139,6 +157,11 @@ const SB64_PER_LEVEL_CATEGORIES = new Set([
     SB64_LEVEL_IDS.ALL_DELUXE
 ]);
 
+const ABJ_PER_LEVEL_CATEGORIES = new Set([
+    ABJ_LEVEL_IDS.INK_FOREST,
+    ABJ_LEVEL_IDS.GEARSHOCK_BEACH
+]);
+
 const GAMES = {
     sb64: {
         id: "9d3wv0w1",
@@ -147,12 +170,17 @@ const GAMES = {
     sr: {
         id: "o6gk4xn1",
         name: "Superstar Racers"
+    },
+    abj: {
+        id: "v1pponz1",
+        name: "A Block's Journey"
     }
 };
 
 const GAME_WIKI_MAP = {
     sb64: 'super-blox-64',
-    sr: 'superstar-racers'
+    sr: 'superstar-racers',
+    abj: 'a-blocks-journey'
 };
 
 function formatTime(seconds, forceMinutes = false) {
@@ -205,12 +233,14 @@ async function getLeaderboardData(gameId, categoryId, levelId = null, variables 
 async function handleSpeedrunRequest(interaction, gameKey, categoryId, levelId = null, variables = {}) {
     const game = GAMES[gameKey];
 
-    // SB64 per-level categories are actually levels in the SRC API.
-    // The Category ID for all per-level categories in SB64 is SB64_CATEGORY_IDS.PER_LEVEL_OVERALL
-    if (gameKey === 'sb64' && !levelId) {
-        if (SB64_PER_LEVEL_CATEGORIES.has(categoryId)) {
+    // SB64/ABJ per-level categories are actually levels in the SRC API.
+    if (!levelId) {
+        if (gameKey === 'sb64' && SB64_PER_LEVEL_CATEGORIES.has(categoryId)) {
             levelId = categoryId;
             categoryId = SB64_CATEGORY_IDS.PER_LEVEL_OVERALL;
+        } else if (gameKey === 'abj' && ABJ_PER_LEVEL_CATEGORIES.has(categoryId)) {
+            levelId = categoryId;
+            categoryId = ABJ_CATEGORY_IDS.ALL_WORLD_ORBS;
         }
     }
 
@@ -236,7 +266,10 @@ async function handleSpeedrunRequest(interaction, gameKey, categoryId, levelId =
             }
         });
 
-        const categoryName = leaderboard.category.data.name;
+        let categoryName = leaderboard.category.data.name;
+        if (gameKey === 'sr' && variables[SR_VARIABLES.VERSIONS] === SR_DEFAULTS.VERSION_LOBBY) {
+            categoryName = "All Maps (Lobby)";
+        }
         const levelName = leaderboard.level?.data?.name;
 
         const mainTitle = levelName ? levelName : game.name;
@@ -318,5 +351,6 @@ module.exports = {
     SR_VARIABLES,
     SR_EVENTS_CHOICES,
     SB64_DEFAULTS,
-    SR_DEFAULTS
+    SR_DEFAULTS,
+    ABJ_CATEGORIES
 };

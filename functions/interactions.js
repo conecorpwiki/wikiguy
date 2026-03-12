@@ -423,6 +423,9 @@ async function handleInteraction(interaction) {
                 }
 
                 response = await handleSpeedrunRequest(interaction, 'sr', categoryId, levelId, variables);
+            } else if (subCommand === 'abj') {
+                const categoryId = interaction.options.getString('category');
+                response = await handleSpeedrunRequest(interaction, 'abj', categoryId);
             } else {
                 return interaction.reply({ content: 'Unknown subcommand.', ephemeral: true }).catch(() => {});
             }
