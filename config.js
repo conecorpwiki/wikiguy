@@ -21,6 +21,7 @@ const WIKIS = {
 };
 
 const CATEGORY_WIKI_MAP = {
+    "1335895166292332585": "untitled-farming-game"
 };
 
 const toggleContribScore = true;
