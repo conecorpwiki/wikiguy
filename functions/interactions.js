@@ -6,14 +6,7 @@ const {
 const { handleFileRequest } = require("./parse_file.js");
 const { handleContribScoresRequest } = require("./contribscores.js");
 const {
-    handleSpeedrunRequest,
-    SB64_VARIABLES,
-    SB64_DEFAULTS,
-    SR_CATEGORY_IDS,
-    SR_ALL_MAPS_V12_VALUE,
-    SR_ALL_MAPS_LOBBY_VALUE,
-    SR_VARIABLES,
-    SR_DEFAULTS
+    handleSpeedrunRequest
 } = require("./speedrun.js");
 const {
     WIKIS,
@@ -389,43 +382,12 @@ async function handleInteraction(interaction) {
         try {
             const subCommand = interaction.options.getSubcommand();
             let response;
-            if (subCommand === 'sb64') {
+            if (subCommand === 'utg') {
                 const categoryId = interaction.options.getString('category');
-                const character = interaction.options.getString('character') || SB64_DEFAULTS.CHARACTER; // Default to Both
-                const glitches = interaction.options.getBoolean('glitches');
-
-                const variables = {};
-                variables[SB64_VARIABLES.CHARACTER] = character;
-                variables[SB64_VARIABLES.GLITCHES] = glitches ? SB64_DEFAULTS.GLITCHES_ON : SB64_DEFAULTS.GLITCHES_OFF; // true = Glitches, false/null = Glitchless
-
-                response = await handleSpeedrunRequest(interaction, 'sb64', categoryId, null, variables);
-            } else if (subCommand === 'sr') {
-                let categoryId = interaction.options.getString('category');
-                let levelId = interaction.options.getString('level');
-                const events = interaction.options.getString('events') || SR_DEFAULTS.EVENTS; // Default to No Events
-
-                const variables = {};
-                variables[SR_VARIABLES.EVENTS] = events;
-
-                // Handle custom All Maps category choices
-                if (categoryId === SR_ALL_MAPS_V12_VALUE) {
-                    categoryId = SR_CATEGORY_IDS.ALL_MAPS;
-                    variables[SR_VARIABLES.VERSIONS] = SR_DEFAULTS.VERSION_V12;
-                    levelId = null; // Ensure levelId is cleared for full-game categories
-                } else if (categoryId === SR_ALL_MAPS_LOBBY_VALUE) {
-                    categoryId = SR_CATEGORY_IDS.ALL_MAPS;
-                    variables[SR_VARIABLES.VERSIONS] = SR_DEFAULTS.VERSION_LOBBY;
-                    levelId = null; // Ensure levelId is cleared for full-game categories
-                } else if (categoryId === SR_CATEGORY_IDS.ALL_MAPS) {
-                    // Fallback for direct ID or old values, default to V12
-                    variables[SR_VARIABLES.VERSIONS] = SR_DEFAULTS.VERSION_V12;
-                    levelId = null; // Ensure levelId is cleared for full-game categories
-                }
-
-                response = await handleSpeedrunRequest(interaction, 'sr', categoryId, levelId, variables);
-            } else if (subCommand === 'abj') {
+                response = await handleSpeedrunRequest(interaction, 'utg', categoryId);
+            } else if (subCommand === 'ufg') {
                 const categoryId = interaction.options.getString('category');
-                response = await handleSpeedrunRequest(interaction, 'abj', categoryId);
+                response = await handleSpeedrunRequest(interaction, 'ufg', categoryId);
             } else {
                 return interaction.reply({ content: 'Unknown subcommand.', ephemeral: true }).catch(() => {});
             }
