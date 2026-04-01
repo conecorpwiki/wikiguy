@@ -6,7 +6,7 @@ app.get('/', (req, res) => {
   res.send(`
     <html>
       <head>
-        <title>Derik is talking</title>
+        <title>Orbital is orbiting</title>
         <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
@@ -15,7 +15,7 @@ app.get('/', (req, res) => {
         </style>
       </head>
       <body>
-        <h1>Derik Discord Bot</h1>
+        <h1>Orbital Discord Bot</h1>
         <p>Bot is running.</p>
       </body>
     </html>
@@ -25,7 +25,7 @@ app.get('/', (req, res) => {
 app.get('/status', (req, res) => {
   res.json({
     status: 'online',
-    bot: 'Derik Discord Bot',
+    bot: 'Orbital Discord Bot',
     timestamp: new Date().toISOString()
   });
 });

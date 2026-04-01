@@ -78,7 +78,7 @@ function getWikiAndPage(messageContent, channelParentId) {
     if (prefix) {
         wikiConfig = WIKIS[PREFIX_WIKI_MAP[prefix]];
     } else {
-        const wikiKey = CATEGORY_WIKI_MAP[channelParentId] || "untitled-tag-game";
+        const wikiKey = CATEGORY_WIKI_MAP[channelParentId] || "superstar-racers";
         wikiConfig = WIKIS[wikiKey];
     }
 

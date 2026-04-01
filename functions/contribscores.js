@@ -11,7 +11,7 @@ async function getContributionScores(wikiConfig) {
         });
 
         const url = `${wikiConfig.apiEndpoint}?${params.toString()}`;
-        const res = await fetch(url, { headers: { "User-Agent": "DiscordBot/Derik" } });
+        const res = await fetch(url, { headers: { "User-Agent": "DiscordBot/Orbital" } });
         const json = await res.json();
         const html = json.parse?.text?.["*"];
 
@@ -48,7 +48,7 @@ async function getContributionScores(wikiConfig) {
             const paddedScore = data.score.padStart(maxScoreLength, ' ');
             const paddedEdits = data.edits.padStart(maxEditLength, ' ');
         
-            dataSummary += `${i + 1}. <:cash:1488794096548974592> \`${paddedScore}\`    ✏️ \`${paddedEdits}\`    **[@${data.user}](${wikiConfig.articlePath}User:${data.user})**\n`;
+            dataSummary += `${i + 1}. <:playerpoint:1472433775593000961> \`${paddedScore}\`    ✏️ \`${paddedEdits}\`    **[@${data.user}](${wikiConfig.articlePath}User:${data.user})**\n`;
         });
 
         if (!dataSummary) return {

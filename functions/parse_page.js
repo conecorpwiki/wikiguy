@@ -142,7 +142,7 @@ async function findCanonicalTitle(input, wikiConfig) {
         });
 
         const res = await fetch(`${wikiConfig.apiEndpoint}?${directParams.toString()}`, { 
-            headers: { "User-Agent": "DiscordBot/Derik" } 
+            headers: { "User-Agent": "DiscordBot/Orbital" } 
         });
         const json = await res.json();
         const pageId = json.query?.pageids?.[0];
@@ -166,7 +166,7 @@ async function findCanonicalTitle(input, wikiConfig) {
         });
 
         const searchRes = await fetch(`${wikiConfig.apiEndpoint}?${searchParams.toString()}`, {
-            headers: { "User-Agent": "DiscordBot/Derik" }
+            headers: { "User-Agent": "DiscordBot/Orbital" }
         });
         const searchJson = await searchRes.json();
         const topResult = searchJson.query?.search?.[0];
@@ -214,7 +214,7 @@ async function getPageData(input, wikiConfig) {
         });
 
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params.toString()}`, {
-            headers: { "User-Agent": "DiscordBot/Derik" }
+            headers: { "User-Agent": "DiscordBot/Orbital" }
         });
         const json = await res.json();
 
@@ -263,7 +263,7 @@ async function getWikiContent(pageTitle, wikiConfig) {
     try {
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params.toString()}`, {
             headers: {
-                "User-Agent": "DiscordBot/Derik",
+                "User-Agent": "DiscordBot/Orbital",
                 "Origin": wikiConfig.baseUrl,
             },
         });
@@ -292,7 +292,7 @@ async function getSectionIndex(pageTitle, sectionName, wikiConfig) {
 
     try {
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params}`, {
-            headers: { "User-Agent": "DiscordBot/Derik" }
+            headers: { "User-Agent": "DiscordBot/Orbital" }
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         const json = await res.json();
@@ -333,7 +333,7 @@ async function getSectionContent(pageTitle, sectionName, wikiConfig) {
 
     try {
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params}`, {
-            headers: { "User-Agent": "DiscordBot/Derik" }
+            headers: { "User-Agent": "DiscordBot/Orbital" }
         });
         const json = await res.json();
 
@@ -389,7 +389,7 @@ async function getLeadSection(pageTitle, wikiConfig) {
 
     try {
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params.toString()}`, {
-            headers: { "User-Agent": "DiscordBot/Derik" }
+            headers: { "User-Agent": "DiscordBot/Orbital" }
         });
         const json = await res.json();
         const pages = json.query?.pages;
