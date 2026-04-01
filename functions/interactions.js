@@ -50,7 +50,7 @@ function sendInteractionError(interaction, error, tag) {
 async function fetchWikiChoices(wikiConfig, params, listKey, isFileSearch) {
     try {
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params.toString()}`, {
-            headers: { "User-Agent": "DiscordBot/Orbital" },
+            headers: { "User-Agent": "DiscordBot/Derik" },
             signal: AbortSignal.timeout(3000)
         });
         if (!res.ok) {
@@ -180,7 +180,7 @@ function buildPageEmbed(title, content, imageUrl, wikiConfig, gallery = null) {
         try {
             let pageUrl;
             if (title === "Special:ContributionScores") {
-                pageUrl = `${wikiConfig.articlePath}Special:ContributionScores?utm_source=orbital`;
+                pageUrl = `${wikiConfig.articlePath}Special:ContributionScores?utm_source=derik`;
             } else {
                 const isSectionLink = String(title).includes(" § ");
                 const titleStr = String(title);
@@ -196,7 +196,7 @@ function buildPageEmbed(title, content, imageUrl, wikiConfig, gallery = null) {
                 }
                 const parts = pageOnly.split(':').map(s => encodeURIComponent(s.replace(/ /g, "_")));
                 const anchor = frag ? '#' + encodeURIComponent(frag.replace(/ /g, '_')) : '';
-                pageUrl = `${wikiConfig.articlePath}${parts.join(':')}?utm_source=orbital${anchor}`;
+                pageUrl = `${wikiConfig.articlePath}${parts.join(':')}?utm_source=derik${anchor}`;
             }
 
             const row = new ActionRowBuilder();

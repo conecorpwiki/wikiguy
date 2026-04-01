@@ -70,7 +70,7 @@ async function getLeaderboardData(gameId, categoryId, levelId = null, variables 
     }
 
     const res = await fetch(url, {
-        headers: { "User-Agent": "DiscordBot/Orbital" },
+        headers: { "User-Agent": "DiscordBot/Derik" },
         signal: AbortSignal.timeout(5000)
     });
     if (!res.ok) {
@@ -131,7 +131,7 @@ async function handleSpeedrunRequest(interaction, gameKey, categoryId, levelId =
                 return p.name || "Guest";
             }).join(" @");
             const time = formatTime(run.times.primary_t, forceMinutes);
-            description += `${place}. <:flag:1477323785366540439> \`${time}\`    [**@${players}**](${run.weblink})\n`;
+            description += `${place}. <:flag:1488791940622454835> \`${time}\`    [**@${players}**](${run.weblink})\n`;
         });
 
         const container = new ContainerBuilder();
