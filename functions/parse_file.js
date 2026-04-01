@@ -34,7 +34,7 @@ async function handleFileRequest(wikiConfig, fileName, interaction) {
 
     try {
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params.toString()}`, {
-            headers: { "User-Agent": "DiscordBot/Orbital" }
+            headers: { "User-Agent": "DiscordBot/Derik" }
         });
 
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
