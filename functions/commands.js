@@ -23,7 +23,7 @@ const wikiChoices = Object.entries(WIKIS).map(([key, wiki]) => ({
 
 const commands = [
     {
-        name: 'lbspeedrun',
+        name: 'speedrun',
         description: 'View speedrun leaderboards',
         integrationTypes: [0, 1],
         contexts: [0, 1, 2],
