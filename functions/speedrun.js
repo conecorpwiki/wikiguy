@@ -44,18 +44,21 @@ const SB64_CHARACTER_CHOICES = [
 
 const SR_CATEGORY_IDS = {
     ALL_MAPS: 'rkl63l6k',
-    INDIVIDUAL_LEVELS_RECODE: '9d8qwwwd',
-    INDIVIDUAL_LEVELS_LEGACY: 'xd1yxxzd'
+    INDIVIDUAL_LEVELS_V13: 'xk94rvxd',
+    INDIVIDUAL_LEVELS_V12: '9d8qwwwd',
+    INDIVIDUAL_LEVELS_V10: 'xd1yxxzd'
 };
 
-const SR_ALL_MAPS_V12_VALUE = 'sr_all_maps_v12';
-const SR_ALL_MAPS_LOBBY_VALUE = 'sr_all_maps_lobby';
+const SR_FILTER_CHOICES = [
+    { name: 'Full game', value: 'full_game' },
+    { name: 'Full game with lobby', value: 'full_game_lobby' },
+    { name: 'Individual map', value: 'individual_map' }
+];
 
-const SR_CATEGORIES = [
-    { name: 'All maps', value: SR_ALL_MAPS_V12_VALUE },
-    { name: 'All maps (Lobby)', value: SR_ALL_MAPS_LOBBY_VALUE },
-    { name: 'Individual Recode maps', value: SR_CATEGORY_IDS.INDIVIDUAL_LEVELS_RECODE },
-    { name: 'Individual pre-rewrite maps', value: SR_CATEGORY_IDS.INDIVIDUAL_LEVELS_LEGACY }
+const SR_VERSION_CHOICES = [
+    { name: 'Pre-Recode (V10)', value: 'v10' },
+    { name: 'Legacy Recode (V12)', value: 'v12' },
+    { name: 'Recode (V13)', value: 'v13' }
 ];
 
 const SR_LEVEL_IDS = {
@@ -77,6 +80,7 @@ const SR_LEVEL_IDS = {
     SWEET_SPEEDWAY: '9gy37kk9',
     UNDERWATER_HIGHWAY: '9x1lxm1d',
     WINTER_WONDERLAND: '9gy3vpj9',
+    TUTORIAL: 'd7yve1gd',
     LOBBY_EASY: 'wj75z50w',
     LOBBY_MEDIUM: 'wo7060j9',
     LOBBY_HARD: 'd1j727zd'
@@ -101,6 +105,7 @@ const SR_LEVELS = [
     { name: 'Sweet Speedway', value: SR_LEVEL_IDS.SWEET_SPEEDWAY },
     { name: 'Underwater Highway', value: SR_LEVEL_IDS.UNDERWATER_HIGHWAY },
     { name: 'Winter Wonderland', value: SR_LEVEL_IDS.WINTER_WONDERLAND },
+    { name: 'Tutorial', value: SR_LEVEL_IDS.TUTORIAL },
     { name: 'Lobby Easy Time Trial', value: SR_LEVEL_IDS.LOBBY_EASY },
     { name: 'Lobby Medium Time Trial', value: SR_LEVEL_IDS.LOBBY_MEDIUM },
     { name: 'Lobby Hard Time Trial', value: SR_LEVEL_IDS.LOBBY_HARD }
@@ -125,7 +130,9 @@ const SB64_DEFAULTS = {
 
 const SR_DEFAULTS = {
     EVENTS: 'qkem56nq',
+    VERSION_V13: 'qox9wdxq',
     VERSION_V12: 'ln8w8p0l',
+    VERSION_V11: 'lmojmn81',
     VERSION_LOBBY: '12vm002q'
 };
 
@@ -343,9 +350,8 @@ module.exports = {
     SB64_VARIABLES,
     SB64_CHARACTER_CHOICES,
     SR_CATEGORY_IDS,
-    SR_ALL_MAPS_V12_VALUE,
-    SR_ALL_MAPS_LOBBY_VALUE,
-    SR_CATEGORIES,
+    SR_FILTER_CHOICES,
+    SR_VERSION_CHOICES,
     SR_LEVEL_IDS,
     SR_LEVELS,
     SR_VARIABLES,
