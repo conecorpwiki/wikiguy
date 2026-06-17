@@ -10,8 +10,6 @@ const {
     SB64_VARIABLES,
     SB64_DEFAULTS,
     SR_CATEGORY_IDS,
-    SR_ALL_MAPS_V12_VALUE,
-    SR_ALL_MAPS_LOBBY_VALUE,
     SR_VARIABLES,
     SR_DEFAULTS
 } = require("./speedrun.js");
@@ -400,26 +398,42 @@ async function handleInteraction(interaction) {
 
                 response = await handleSpeedrunRequest(interaction, 'sb64', categoryId, null, variables);
             } else if (subCommand === 'sr') {
-                let categoryId = interaction.options.getString('category');
+                const filter = interaction.options.getString('filter');
+                const version = interaction.options.getString('version');
                 let levelId = interaction.options.getString('level');
                 const events = interaction.options.getString('events') || SR_DEFAULTS.EVENTS; // Default to No Events
 
                 const variables = {};
                 variables[SR_VARIABLES.EVENTS] = events;
 
-                // Handle custom All Maps category choices
-                if (categoryId === SR_ALL_MAPS_V12_VALUE) {
+                let categoryId;
+                if (filter === 'individual_map') {
+                    if (!levelId) {
+                        return interaction.reply({ content: 'You must select a level when using the "Individual map" filter.', ephemeral: true });
+                    }
+                    if (version === 'v13') {
+                        categoryId = SR_CATEGORY_IDS.INDIVIDUAL_LEVELS_V13;
+                    } else if (version === 'v12') {
+                        categoryId = SR_CATEGORY_IDS.INDIVIDUAL_LEVELS_V12;
+                    } else if (version === 'v10') {
+                        categoryId = SR_CATEGORY_IDS.INDIVIDUAL_LEVELS_V10;
+                    }
+                } else {
+                    // Full game or Full game with lobby
                     categoryId = SR_CATEGORY_IDS.ALL_MAPS;
-                    variables[SR_VARIABLES.VERSIONS] = SR_DEFAULTS.VERSION_V12;
                     levelId = null; // Ensure levelId is cleared for full-game categories
-                } else if (categoryId === SR_ALL_MAPS_LOBBY_VALUE) {
-                    categoryId = SR_CATEGORY_IDS.ALL_MAPS;
-                    variables[SR_VARIABLES.VERSIONS] = SR_DEFAULTS.VERSION_LOBBY;
-                    levelId = null; // Ensure levelId is cleared for full-game categories
-                } else if (categoryId === SR_CATEGORY_IDS.ALL_MAPS) {
-                    // Fallback for direct ID or old values, default to V12
-                    variables[SR_VARIABLES.VERSIONS] = SR_DEFAULTS.VERSION_V12;
-                    levelId = null; // Ensure levelId is cleared for full-game categories
+
+                    if (filter === 'full_game_lobby') {
+                        variables[SR_VARIABLES.VERSIONS] = SR_DEFAULTS.VERSION_LOBBY;
+                    } else {
+                        if (version === 'v13') {
+                            variables[SR_VARIABLES.VERSIONS] = SR_DEFAULTS.VERSION_V13;
+                        } else if (version === 'v12') {
+                            variables[SR_VARIABLES.VERSIONS] = SR_DEFAULTS.VERSION_V12;
+                        } else if (version === 'v10') {
+                            variables[SR_VARIABLES.VERSIONS] = SR_DEFAULTS.VERSION_V11; // Map V10 to V11 for full game
+                        }
+                    }
                 }
 
                 response = await handleSpeedrunRequest(interaction, 'sr', categoryId, levelId, variables);

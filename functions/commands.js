@@ -2,7 +2,8 @@ const { WIKIS } = require("../config.js");
 const {
     SB64_CATEGORIES,
     SB64_CHARACTER_CHOICES,
-    SR_CATEGORIES,
+    SR_FILTER_CHOICES,
+    SR_VERSION_CHOICES,
     SR_LEVELS,
     SR_EVENTS_CHOICES,
     SB64_CATEGORY_IDS,
@@ -10,8 +11,6 @@ const {
     SB64_VARIABLES,
     SB64_DEFAULTS,
     SR_CATEGORY_IDS,
-    SR_ALL_MAPS_V12_VALUE,
-    SR_ALL_MAPS_LOBBY_VALUE,
     SR_VARIABLES,
     SR_DEFAULTS,
     ABJ_CATEGORIES
@@ -62,15 +61,22 @@ const commands = [
                 type: 1, // SUB_COMMAND
                 options: [
                     {
-                        name: 'category',
-                        description: 'The category to view',
+                        name: 'filter',
+                        description: 'The filter to apply',
                         type: 3, // STRING
                         required: true,
-                        choices: SR_CATEGORIES
+                        choices: SR_FILTER_CHOICES
+                    },
+                    {
+                        name: 'version',
+                        description: 'The version to view',
+                        type: 3, // STRING
+                        required: true,
+                        choices: SR_VERSION_CHOICES
                     },
                     {
                         name: 'level',
-                        description: 'The level to view (only works with Individual Levels categories)',
+                        description: 'The level to view (only works with Individual map filter)',
                         type: 3, // STRING
                         required: false,
                         choices: SR_LEVELS
@@ -196,8 +202,8 @@ module.exports = {
     SB64_VARIABLES,
     SB64_DEFAULTS,
     SR_CATEGORY_IDS,
-    SR_ALL_MAPS_V12_VALUE,
-    SR_ALL_MAPS_LOBBY_VALUE,
+    SR_FILTER_CHOICES,
+    SR_VERSION_CHOICES,
     SR_VARIABLES,
     SR_DEFAULTS
 };
