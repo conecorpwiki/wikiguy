@@ -40,18 +40,12 @@ const STATUS_INTERVAL_MS = 5 * 60 * 1000;
 // --- DISCORD STATUSES ---
 const STATUS_OPTIONS = [
     { type: 4, text: "just send [[a page]] or {{a page}}!" },
-    { type: 4, text: "now supporting 3 wikis!" },
     { type: 4, text: "use [[sb64:page]] for SUPER BLOX 64! embedding" },
     { type: 4, text: "use [[sr:Page]] for Superstar Racers embedding" },
     { type: 4, text: "use [[abj:Page]] for A Block's Journey embedding" },
     { type: 4, text: "abj.conecorp.cc" },
     { type: 4, text: "sr.conecorp.cc" },
     { type: 4, text: "sb64.conecorp.cc" },
-    { type: 4, text: "conecorp.cc" },
-    { type: 4, text: "₊˚⊹⋆" },
-    { type: 4, text: "⋆｡𖦹°⭒˚｡⋆" },
-    { type: 4, text: "✶⋆.˚" },
-    { type: 4, text: "°˖➴" },
     { type: 0, text: "SUPER BLOX 64!" },
     { type: 0, text: "Superstar Racers" },
     { type: 0, text: "A Block's Journey" },
