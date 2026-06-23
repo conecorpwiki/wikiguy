@@ -21,4 +21,18 @@ const fetch = async (...args) => {
     return fetchInstance(urlOrRequest, newOptions);
 };
 
-module.exports = { fetch };
+/**
+ * Truncates a markdown string to a certain number of paragraphs.
+ * Paragraphs are assumed to be separated by double newlines (\n\n).
+ * @param {string} text - The markdown text to truncate.
+ * @param {number} maxParagraphs - Maximum number of paragraphs to keep.
+ * @returns {string} - The truncated text.
+ */
+function truncateToParagraphs(text, maxParagraphs = 2) {
+    if (!text) return "";
+    const paragraphs = text.split(/\n\n+/).filter(p => p.trim().length > 0);
+    if (paragraphs.length <= maxParagraphs) return text;
+    return paragraphs.slice(0, maxParagraphs).join('\n\n') + ' ...';
+}
+
+module.exports = { fetch, truncateToParagraphs };

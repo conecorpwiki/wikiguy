@@ -1,4 +1,4 @@
-const { fetch } = require("./utils.js");
+const { fetch, truncateToParagraphs } = require("./utils.js");
 const cheerio = require('cheerio');
 
 // --- CACHING ---
@@ -86,22 +86,25 @@ function htmlToMarkdown(html, baseUrl, $existing = null) {
                 return '\n';
             case 'p':
             case 'div':
+                return `${childrenContent}\n\n`;
+            case 'ul':
+            case 'ol':
                 return `${childrenContent}\n`;
             case 'li': {
                 const isOrdered = node.parent && node.parent.name === 'ol';
                 const prefix = isOrdered
                     ? `${Array.from(node.parent.children).filter(c => c.name === 'li').indexOf(node) + 1}. `
                     : '* ';
-                return `${prefix}${childrenContent.trim()}`;
+                return `${prefix}${childrenContent.trim()}\n`;
             }
             case 'h1':
             case 'h2':
-                return childrenContent.trim() ? `## ${childrenContent.trim()}\n` : '';
+                return childrenContent.trim() ? `## ${childrenContent.trim()}\n\n` : '';
             case 'h3':
             case 'h4':
             case 'h5':
             case 'h6':
-                return childrenContent.trim() ? `### ${childrenContent.trim()}\n` : '';
+                return childrenContent.trim() ? `### ${childrenContent.trim()}\n\n` : '';
             default:
                 return childrenContent;
         }
@@ -493,7 +496,7 @@ async function parseTemplates(text, wikiConfig) {
             const anchor = fragment ? `#${encodeURIComponent(fragment.replace(/ /g, "_"))}` : '';
             const link = `<${wikiConfig.articlePath}${parts.join(':')}${anchor}>`;
 
-            replacement = `**${templateName}** → ${actualText.slice(0,1000)}\n${link}`;
+            replacement = `**${templateName}** → ${truncateToParagraphs(actualText)}\n${link}`;
         } else {
             replacement = "I don't know.";
         }
