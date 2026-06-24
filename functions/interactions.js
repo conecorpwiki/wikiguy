@@ -17,7 +17,7 @@ const {
     WIKIS,
     toggleContribScore
 } = require("../config.js");
-const { fetch, truncateToParagraphs } = require("./utils.js");
+const { fetch, truncateToParagraphs: truncateContentToParagraphs } = require("./utils.js");
 
 const {
     ContainerBuilder,
@@ -317,7 +317,7 @@ async function handleUserRequest(wikiConfig, rawPageName, messageOrInteraction, 
                 content = "No content available.";
             }
 
-            const container = buildPageEmbed(displayTitle, truncateToParagraphs(content), imageUrl, wikiConfig, gallery);
+            const container = buildPageEmbed(displayTitle, truncateContentToParagraphs(content), imageUrl, wikiConfig, gallery);
 
             return await smartReply({
                 content: "",
