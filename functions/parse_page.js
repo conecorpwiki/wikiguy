@@ -1,4 +1,4 @@
-const { fetch, truncateToParagraphs } = require("./utils.js");
+const { fetch, truncateToParagraphs: truncateContentToParagraphs } = require("./utils.js");  
 const cheerio = require('cheerio');
 
 // --- CACHING ---
@@ -99,12 +99,12 @@ function htmlToMarkdown(html, baseUrl, $existing = null) {
             }
             case 'h1':
             case 'h2':
-                return childrenContent.trim() ? `## ${childrenContent.trim()}\n\n` : '';
+                return childrenContent.trim() ? `## ${childrenContent.trim()}\n` : '';
             case 'h3':
             case 'h4':
             case 'h5':
             case 'h6':
-                return childrenContent.trim() ? `### ${childrenContent.trim()}\n\n` : '';
+                return childrenContent.trim() ? `### ${childrenContent.trim()}\n` : '';
             default:
                 return childrenContent;
         }
@@ -496,7 +496,7 @@ async function parseTemplates(text, wikiConfig) {
             const anchor = fragment ? `#${encodeURIComponent(fragment.replace(/ /g, "_"))}` : '';
             const link = `<${wikiConfig.articlePath}${parts.join(':')}${anchor}>`;
 
-            replacement = `**${templateName}** → ${truncateToParagraphs(actualText)}\n${link}`;
+            replacement = `**${templateName}** → ${truncateContentToParagraphs(actualText)}\n${link}`;
         } else {
             replacement = "I don't know.";
         }
