@@ -20,6 +20,14 @@ const wikiChoices = Object.entries(WIKIS).map(([key, wiki]) => ({
     name: wiki.name,
     value: key
 }));
+const hasMultipleWikis = Object.keys(WIKIS).length > 1;
+const wikiOption = (required = true) => ({
+    name: 'wiki',
+    description: 'The wiki to search in',
+    type: 3,
+    required,
+    choices: wikiChoices
+});
 
 const allCommands = [
     {
@@ -112,13 +120,7 @@ const allCommands = [
         integrationTypes: [0, 1],
         contexts: [0, 1, 2],
         options: [
-            {
-                name: 'wiki',
-                description: 'Select a wiki',
-                type: 3, // STRING
-                required: true,
-                choices: wikiChoices
-            }
+            ...(hasMultipleWikis ? [wikiOption(true)] : [])
         ]
     },
     {
@@ -127,13 +129,7 @@ const allCommands = [
         integrationTypes: [0, 1],
         contexts: [0, 1, 2],
         options: [
-            {
-                name: 'wiki',
-                description: 'The wiki to link to',
-                type: 3, // STRING
-                required: true,
-                choices: wikiChoices
-            }
+            ...(hasMultipleWikis ? [wikiOption(true)] : [])
         ]
     },
     {
@@ -147,13 +143,7 @@ const allCommands = [
                 description: 'Search for a wiki page',
                 type: 1, // SUB_COMMAND
                 options: [
-                    {
-                        name: 'wiki',
-                        description: 'The wiki to search in',
-                        type: 3, // STRING
-                        required: true,
-                        choices: wikiChoices
-                    },
+                    ...(hasMultipleWikis ? [wikiOption(true)] : []),
                     {
                         name: 'page',
                         description: 'The page to search for',
@@ -175,13 +165,7 @@ const allCommands = [
                 description: 'Search for a wiki file',
                 type: 1, // SUB_COMMAND
                 options: [
-                    {
-                        name: 'wiki',
-                        description: 'The wiki to search in',
-                        type: 3, // STRING
-                        required: true,
-                        choices: wikiChoices
-                    },
+                    ...(hasMultipleWikis ? [wikiOption(true)] : []),
                     {
                         name: 'file',
                         description: 'The file to search for',
@@ -199,7 +183,7 @@ const allCommands = [
         integrationTypes: [0, 1],
         contexts: [0, 1, 2],
         options: [
-            { name: 'wiki', description: 'The wiki to search in', type: 3, required: true, choices: wikiChoices },
+            ...(hasMultipleWikis ? [wikiOption(true)] : []),
             { name: 'username', description: 'The wiki username', type: 3, required: true, autocomplete: true }
         ]
     },
@@ -209,7 +193,7 @@ const allCommands = [
         integrationTypes: [0, 1],
         contexts: [0, 1, 2],
         options: [
-            { name: 'wiki', description: 'The wiki to search in', type: 3, required: false, choices: wikiChoices }
+            ...(hasMultipleWikis ? [wikiOption(false)] : [])
         ]
     }
 ];

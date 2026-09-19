@@ -49,8 +49,9 @@ async function getContributionScores(wikiConfig) {
         userData.forEach((data, i) => {
             const paddedScore = data.score.padStart(maxScoreLength, ' ');
             const paddedEdits = data.edits.padStart(maxEditLength, ' ');
+            const usernamePath = encodeURIComponent(data.user.trim().replace(/\s+/g, "_"));
         
-            dataSummary += `${i + 1}. <:playerpoint:${CONTRIBSCORES_SCORE_EMOJI}> \`${paddedScore}\`    ✏️ \`${paddedEdits}\`    **[@${data.user}](${wikiConfig.articlePath}User:${data.user})**\n`;
+            dataSummary += `${i + 1}. <:playerpoint:${CONTRIBSCORES_SCORE_EMOJI}> \`${paddedScore}\`    ✏️ \`${paddedEdits}\`    **[@${data.user}](${wikiConfig.articlePath}User:${usernamePath})**\n`;
         });
 
         if (!dataSummary) return {
@@ -73,7 +74,7 @@ async function handleContribScoresRequest(interaction, { toggleContribScore, WIK
         await interaction.reply({ content: 'Contribution scores are currently disabled.', ephemeral: true });
         return;
     }
-    const wikiKey = interaction.options.getString('wiki');
+    const wikiKey = interaction.options.getString('wiki') || (Object.keys(WIKIS).length === 1 ? Object.keys(WIKIS)[0] : null);
     const wikiConfig = WIKIS[wikiKey];
 
     if (!wikiConfig) {

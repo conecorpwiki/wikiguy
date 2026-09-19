@@ -1,5 +1,5 @@
 const { fetch, truncateToParagraphs: truncateContentToParagraphs } = require("./utils.js");  
-const { BOT_NAME } = require("../config.js");
+const { BOT_NAME, PAGE_CACHE_MS } = require("../config.js");
 const cheerio = require('cheerio');
 
 const BOT_USER_AGENT = `${BOT_NAME} Discord bot`;
@@ -8,6 +8,24 @@ const BOT_USER_AGENT = `${BOT_NAME} Discord bot`;
 const CANONICAL_CACHE = new Map();
 const PAGE_DATA_CACHE = new Map();
 const MAX_CACHE_SIZE = 500;
+const CACHE_MS = PAGE_CACHE_MS;
+
+function getCachedValue(map, key) {
+    const entry = map.get(key);
+    if (!entry) return undefined;
+
+    if (Date.now() >= entry.expiresAt) {
+        map.delete(key);
+        return undefined;
+    }
+
+    return entry.value;
+}
+
+function setCachedValue(map, key, value) {
+    map.set(key, { value, expiresAt: Date.now() + CACHE_MS });
+    pruneCache(map);
+}
 
 function pruneCache(map) {
     while (map.size > MAX_CACHE_SIZE) {
@@ -184,7 +202,8 @@ async function findCanonicalTitle(input, wikiConfig) {
     const wikiKey = wikiConfig.prefix || wikiConfig.baseUrl;
     const cacheKey = `${wikiKey}:${raw.toLowerCase()}`;
 
-    if (CANONICAL_CACHE.has(cacheKey)) return CANONICAL_CACHE.get(cacheKey);
+    const cachedCanonical = getCachedValue(CANONICAL_CACHE, cacheKey);
+    if (cachedCanonical !== undefined) return cachedCanonical;
 
     try {
         // direct lookup
@@ -206,8 +225,7 @@ async function findCanonicalTitle(input, wikiConfig) {
         // if found directly or through redirect return the canonical title
         if (page && page.missing === undefined) {
             const canonical = page.title;
-            CANONICAL_CACHE.set(cacheKey, canonical);
-            pruneCache(CANONICAL_CACHE);
+            setCachedValue(CANONICAL_CACHE, cacheKey, canonical);
             return canonical;
         }
 
@@ -229,8 +247,7 @@ async function findCanonicalTitle(input, wikiConfig) {
         // return the title of the top search result if it exists
         if (topResult) {
             const canonical = topResult.title;
-            CANONICAL_CACHE.set(cacheKey, canonical);
-            pruneCache(CANONICAL_CACHE);
+            setCachedValue(CANONICAL_CACHE, cacheKey, canonical);
             return canonical;
         }
     } catch (err) {
@@ -247,11 +264,13 @@ async function getPageData(input, wikiConfig) {
     const cacheKey = `${wikiKey}:${raw.toLowerCase()}`;
 
     // 1. Check Cache
-    if (CANONICAL_CACHE.has(cacheKey)) {
-        const canonical = CANONICAL_CACHE.get(cacheKey);
+    const cachedCanonical = getCachedValue(CANONICAL_CACHE, cacheKey);
+    if (cachedCanonical !== undefined) {
+        const canonical = cachedCanonical;
         const pageCacheKey = `${wikiKey}:${canonical}`;
-        if (PAGE_DATA_CACHE.has(pageCacheKey)) {
-            return { canonical, ...PAGE_DATA_CACHE.get(pageCacheKey) };
+        const cachedPageData = getCachedValue(PAGE_DATA_CACHE, pageCacheKey);
+        if (cachedPageData !== undefined) {
+            return { canonical, ...cachedPageData };
         }
     }
 
@@ -293,11 +312,9 @@ async function getPageData(input, wikiConfig) {
         const data = { extract, imageUrl };
 
         // 5. Update Cache
-        CANONICAL_CACHE.set(cacheKey, canonical);
-        pruneCache(CANONICAL_CACHE);
+        setCachedValue(CANONICAL_CACHE, cacheKey, canonical);
 
-        PAGE_DATA_CACHE.set(`${wikiKey}:${canonical}`, data);
-        pruneCache(PAGE_DATA_CACHE);
+        setCachedValue(PAGE_DATA_CACHE, `${wikiKey}:${canonical}`, data);
 
         return { canonical, ...data };
 

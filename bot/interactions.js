@@ -40,6 +40,15 @@ const {
 
 const responseMap = new Map();
 const botToAuthorMap = new Map();
+const SINGLE_WIKI_KEY = Object.keys(WIKIS).length === 1 ? Object.keys(WIKIS)[0] : null;
+
+function getInteractionWikiKey(interaction, allowRandom = false) {
+    return interaction.options.getString('wiki') || SINGLE_WIKI_KEY || (allowRandom ? nextRandomWikiKey() : null);
+}
+
+function getWikiDisplayName(wikiConfig) {
+    return String(wikiConfig.name || '').replace(/\s+Wiki$/i, '');
+}
 
 function nextRandomWikiKey() {
     const keys = Object.keys(WIKIS);
@@ -326,7 +335,7 @@ async function handleUserRequest(wikiConfig, rawPageName, messageOrInteraction, 
     const contextMessage = messageOrInteraction;
     let typingInterval;
     let typingTimeout;
-    if (!botMessageToEdit && contextMessage.channel?.sendTyping) {
+    if (!isInteraction(messageOrInteraction) && !botMessageToEdit && contextMessage.channel?.sendTyping) {
         messageOrInteraction.channel.sendTyping().catch(() => {});
         typingInterval = setInterval(() => messageOrInteraction.channel.sendTyping().catch(() => {}), 8000);
         typingTimeout = setTimeout(() => {
@@ -343,7 +352,7 @@ async function handleUserRequest(wikiConfig, rawPageName, messageOrInteraction, 
             const username = userMatch[1].trim();
             const profile = await getUserProfile(username, wikiConfig);
             if (!profile) {
-                return await smartReply({ content: `User "${username}" not found on [${wikiConfig.name} Wiki](<${wikiConfig.baseUrl}>).`, components: [], ephemeral: true, allowedMentions: { parse: [] } });
+                return await smartReply({ content: `User "${username}" not found on [${getWikiDisplayName(wikiConfig)}](<${wikiConfig.baseUrl}>).`, components: [], ephemeral: true, allowedMentions: { parse: [] } });
             }
             const container = buildUserEmbed(profile, wikiConfig);
             return await smartReply({ content: "", components: [container], flags: MessageFlags.IsComponentsV2, allowedMentions: { parse: [] } });
@@ -352,7 +361,7 @@ async function handleUserRequest(wikiConfig, rawPageName, messageOrInteraction, 
         if (String(rawPageName).trim().toLowerCase() === "special:random") {
             const randomTitle = await getRandomPage(wikiConfig);
             if (!randomTitle) {
-                return await smartReply({ content: `Unable to find a random page on [${wikiConfig.name} Wiki](<${wikiConfig.baseUrl}>).`, components: [], ephemeral: true, allowedMentions: { parse: [] } });
+                return await smartReply({ content: `Unable to find a random page on [${getWikiDisplayName(wikiConfig)}](<${wikiConfig.baseUrl}>).`, components: [], ephemeral: true, allowedMentions: { parse: [] } });
             }
             rawPageName = randomTitle;
         }
@@ -411,7 +420,7 @@ async function handleUserRequest(wikiConfig, rawPageName, messageOrInteraction, 
                 allowedMentions: { repliedUser: false },
             });
         } else {
-            return await smartReply({ content: `Page "${rawPageName}" not found on [${wikiConfig.name} Wiki](<${wikiConfig.baseUrl}>).`, components: [], ephemeral: true, allowedMentions: { parse: [] }});
+            return await smartReply({ content: `Page "${rawPageName}" not found on [${getWikiDisplayName(wikiConfig)}](<${wikiConfig.baseUrl}>).`, components: [], ephemeral: true, allowedMentions: { parse: [] }});
         }
 
     } catch (err) {
@@ -449,7 +458,7 @@ async function handleInteraction(interaction) {
     if (interaction.isAutocomplete()) {
         if (interaction.commandName === 'parse' || interaction.commandName === 'wiki' || interaction.commandName === 'user') {
             const focusedOption = interaction.options.getFocused(true);
-            const wikiKey = interaction.options.getString('wiki');
+            const wikiKey = getInteractionWikiKey(interaction);
             const wikiConfig = WIKIS[wikiKey];
 
             if (!wikiConfig) {
@@ -549,7 +558,7 @@ async function handleInteraction(interaction) {
             return sendInteractionError(interaction, err, 'speedrun');
         }
     } else if (interaction.commandName === 'wiki') {
-        const wikiKey = interaction.options.getString('wiki');
+        const wikiKey = getInteractionWikiKey(interaction);
         const wikiConfig = WIKIS[wikiKey];
 
         if (!wikiConfig) {
@@ -581,7 +590,7 @@ async function handleInteraction(interaction) {
             }
         }
     } else if (interaction.commandName === 'user' || interaction.commandName === 'random') {
-        const wikiKey = interaction.options.getString('wiki') || nextRandomWikiKey();
+        const wikiKey = getInteractionWikiKey(interaction, true);
         const wikiConfig = WIKIS[wikiKey];
         if (!wikiConfig) {
             await interaction.reply({ content: 'Unknown wiki selection.', ephemeral: true }).catch(() => {});
@@ -602,7 +611,7 @@ async function handleInteraction(interaction) {
         }
     } else if (interaction.commandName === 'parse') {
         const subCommand = interaction.options.getSubcommand();
-        const wikiKey = interaction.options.getString('wiki');
+        const wikiKey = getInteractionWikiKey(interaction);
         const wikiConfig = WIKIS[wikiKey];
 
         if (!wikiConfig) {

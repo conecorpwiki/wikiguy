@@ -7,6 +7,7 @@ const BOT_USER_AGENT = `${BOT_NAME} Discord bot`;
 async function getUserProfile(username, wikiConfig) {
     const normalized = String(username).trim().replace(/^User\s*:\s*/i, "").replace(/^@/, "");
     if (!normalized) return null;
+    const usernamePath = encodeURIComponent(normalized.replace(/\s+/g, "_"));
     const params = new URLSearchParams({ action: "query", format: "json", list: "users", ususers: normalized, usprop: "groups|editcount" });
     try {
         const response = await fetch(`${wikiConfig.apiEndpoint}?${params}`, { headers: { "User-Agent": BOT_USER_AGENT } });
@@ -15,7 +16,7 @@ async function getUserProfile(username, wikiConfig) {
         if (!user || user.invalid !== undefined || user.userid === 0) return null;
         let avatarUrl = null;
         try {
-            const profileUrl = `${wikiConfig.articlePath}User:${encodeURIComponent(normalized.replace(/ /g, "_"))}`;
+            const profileUrl = `${wikiConfig.articlePath}User:${usernamePath}`;
             const profileResponse = await fetch(profileUrl, { headers: { "User-Agent": BOT_USER_AGENT } });
             if (profileResponse.ok) {
                 const $profile = cheerio.load(await profileResponse.text());
@@ -25,7 +26,7 @@ async function getUserProfile(username, wikiConfig) {
             }
         } catch (err) { console.warn("Failed to fetch profile avatar:", err.message); }
         const page = await getPageData(`User:${normalized}`, wikiConfig);
-        const profileUrl = `${wikiConfig.articlePath}User:${normalized.replace(/ /g, "_")}`;
+        const profileUrl = `${wikiConfig.articlePath}User:${usernamePath}`;
         const fallback = { bureaucrat: "Bureaucrat", "interface-admin": "Interface administrator", sysop: "Administrator", autoconfirmed: "Autoconfirmed", confirmed: "Confirmed", bot: "Bot" };
         const visibleGroups = (Array.isArray(user.groups) ? user.groups : []).filter(group => !["*", "user"].includes(group));
         const labels = {};
@@ -38,7 +39,8 @@ async function getUserProfile(username, wikiConfig) {
         }
         const clean = label => String(label).replace(/\{\{\s*GENDER\s*:\s*[^|}]+\|([^{}]*)\}\}/gi, "$1").replace(/\{\{[^{}]*\}\}/g, "").trim().replace(/[-_]+/g, " ").toLowerCase();
         const groups = visibleGroups.map(group => clean(labels[`group-${group}-member`] || fallback[group] || group)).map((group, index) => index === 0 ? group.charAt(0).toUpperCase() + group.slice(1) : group);
-        return { username: user.name || normalized, groups: [...new Set(groups)], editCount: Number.isFinite(Number(user.editcount)) ? Number(user.editcount) : null, avatarUrl, profileUrl, contribsUrl: `${wikiConfig.articlePath}Special:Contributions/${encodeURIComponent(user.name || normalized)}`, content: page?.extract || "" };
+        const contribsUsernamePath = encodeURIComponent(String(user.name || normalized).replace(/\s+/g, "_"));
+        return { username: user.name || normalized, groups: [...new Set(groups)], editCount: Number.isFinite(Number(user.editcount)) ? Number(user.editcount) : null, avatarUrl, profileUrl, contribsUrl: `${wikiConfig.articlePath}Special:Contributions/${contribsUsernamePath}`, content: page?.extract || "" };
     } catch (err) { console.warn("getUserProfile failed:", err.message); return null; }
 }
 

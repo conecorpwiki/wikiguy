@@ -1,9 +1,11 @@
-### Wiki Guy is built from scratch to support <a href="https://conecorp.cc">CONECORP</a> wikis.
-![](https://static.wikitide.net/stackdwiki/2/26/834_1x_shots_so.png)
-<br>
 <p align="center">
-  <a href="https://discord.com/oauth2/authorize?client_id=1472272697798037524">Add to server</a> | <a href="https://github.com/conecorp/wikiguy/wiki">Bot documentation</a>
-<br>ദ്ദി◝ ⩊ ◜.ᐟ
+  <img src="https://files.catbox.moe/bbp2yn.png" width="500" alt="banner">
+</p>
+
+<h3 align="center">the all-in-one bot for <a href="https://conecorp.cc">CONECORP</a> wikis</h3>
+
+<p align="center">
+  <a href="https://discord.com/oauth2/authorize?client_id=1472272697798037524">Add to server</a>
 </p>
 
 ## Setup
@@ -18,7 +20,7 @@
 1. Clone the repository and enter its directory:
 
    ```bash
-   git clone https://github.com/conecorp/wikiguy.git
+   git clone https://github.com/conecorpwiki/wikiguy.git
    cd wikiguy
    ```
 
@@ -50,6 +52,7 @@ Most bot behavior is configured in [`config.js`](config.js). Restart the bot aft
 - **`WIKI_MAP`** — Map Discord channel or category IDs to a wiki. This controls which wiki is used when a message does not include a wiki prefix.
 - **`STATUS_OPTIONS`** — Customize the bot’s rotating Discord status messages and activity types.
 - **`STATUS_INTERVAL_MS`** — Set how often the bot rotates its status. The default is five minutes.
+- **`PAGE_CACHE_MS`** — Set how long page lookups stay cached in memory. The default is 30 minutes.
 - **`COMMANDS`** — Enable or disable individual slash commands. Set a command to `false` to prevent it from being registered with Discord. Available commands are `speedrun`, `contribs`, `wiki`, `parse`, `user`, and `random`.
 - **`SPEEDRUN_EMOJI`** and **`CONTRIBSCORES_SCORE_EMOJI`** — Set the custom emoji IDs used by those features.
 
