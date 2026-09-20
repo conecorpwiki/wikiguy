@@ -41,6 +41,7 @@ const {
 const responseMap = new Map();
 const botToAuthorMap = new Map();
 const SINGLE_WIKI_KEY = Object.keys(WIKIS).length === 1 ? Object.keys(WIKIS)[0] : null;
+const toggleContribScore = COMMANDS.contribs === true;
 
 function getInteractionWikiKey(interaction, allowRandom = false) {
     return interaction.options.getString('wiki') || SINGLE_WIKI_KEY || (allowRandom ? nextRandomWikiKey() : null);
