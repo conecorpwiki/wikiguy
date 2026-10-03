@@ -85,6 +85,23 @@ function getWikiAndPage(messageContent, channel) {
     const matchedPageName = (match[2] || match[4]).trim();
     let rawPageName = matchedPageName;
 
+    // The channel's wiki is also the source wiki for resolving unknown
+    // interwiki prefixes. Keep this lookup available for both unprefixed
+    // pages and prefixes that are not configured in config.js.
+    const channelAndCategoryIds = [
+        channel?.id,
+        channel?.parentId,
+        channel?.parent?.id,
+        channel?.parent?.parentId,
+        channel?.parent?.parent?.id
+    ].filter(Boolean).map(String);
+    // Keep message handling alive if an older/misconfigured deployment has
+    // no WIKI_MAP export yet. The default wiki still handles the message.
+    const wikiMap = WIKI_MAP || {};
+    const configuredId = channelAndCategoryIds.find(id => wikiMap[id]);
+    const defaultWikiKey = wikiMap[configuredId] || DEFAULT_WIKI;
+    const defaultWikiConfig = WIKIS[defaultWikiKey];
+
     let wikiConfig = null;
     if (prefix) {
         // Explicit prefixes override the wiki configured for this channel.
@@ -93,24 +110,12 @@ function getWikiAndPage(messageContent, channel) {
         // original prefix in the page name until handleUserRequest confirms
         // it through the source wiki's interwiki map. This also preserves
         // ordinary local namespaces such as [[File:...]].
-        if (!wikiConfig) rawPageName = `${prefix}:${matchedPageName}`;
+        if (!wikiConfig) {
+            rawPageName = `${prefix}:${matchedPageName}`;
+            wikiConfig = defaultWikiConfig;
+        }
     } else {
-        // The same config map supports both channel-specific and category-wide
-        // defaults. Put the channel first so a channel override wins over its
-        // parent category.
-        const channelAndCategoryIds = [
-            channel?.id,
-            channel?.parentId,
-            channel?.parent?.id,
-            channel?.parent?.parentId,
-            channel?.parent?.parent?.id
-        ].filter(Boolean).map(String);
-        // Keep message handling alive if an older/misconfigured deployment has
-        // no WIKI_MAP export yet. The default wiki still handles the message.
-        const wikiMap = WIKI_MAP || {};
-        const configuredId = channelAndCategoryIds.find(id => wikiMap[id]);
-        const wikiKey = wikiMap[configuredId] || DEFAULT_WIKI;
-        wikiConfig = WIKIS[wikiKey];
+        wikiConfig = defaultWikiConfig;
     }
 
     const rawLower = rawPageName.toLowerCase();
