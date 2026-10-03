@@ -56,6 +56,13 @@ Most bot behavior is configured in [`config.js`](config.js). Restart the bot aft
 - **`COMMANDS`** — Enable or disable individual slash commands. Set a command to `false` to prevent it from being registered with Discord. Available commands are `speedrun`, `contribs`, `wiki`, `parse`, `user`, and `random`.
 - **`SPEEDRUN_EMOJI`** and **`CONTRIBSCORES_SCORE_EMOJI`** — Set the custom emoji IDs used by those features.
 
+Messages can also use interwiki links configured by the channel’s wiki, such as
+`[[wikipedia:Chicken]]` or `[[commons:Main page]]`. The bot reads the source wiki’s
+MediaWiki interwiki map, verifies that the destination page exists through its
+API, and then creates the usual extract embed with a link to the destination
+wiki. Prefixes configured in `config.js` take precedence over interwiki
+prefixes.
+
 When adding a wiki, add its configuration to `WIKIS` and update `WIKI_MAP` or the relevant status messages as needed. Discord channel, category, and emoji IDs can be copied using Discord’s Developer Mode.
 
 ## Web server and Instatus

@@ -4,6 +4,7 @@ const {
     getSectionContent,
     getSectionChoices,
     linkIntroductionPageName,
+    resolveInterwikiPage,
 } = require("../functions/page.js");
 const { getRandomPage } = require("../functions/random.js");
 const { getUserProfile } = require("../functions/user.js");
@@ -301,6 +302,24 @@ function buildUserEmbed(profile, wikiConfig) {
 }
 
 async function handleUserRequest(wikiConfig, rawPageName, messageOrInteraction, botMessageToEdit = null, buttonEmoji = null) {
+    const explicitPrefix = String(rawPageName).match(/^([A-Za-z][A-Za-z0-9_-]*):(.+)$/s);
+    const explicitWiki = explicitPrefix && Object.values(WIKIS).find(wiki =>
+        wiki.prefix?.toLowerCase() === explicitPrefix[1].toLowerCase()
+    );
+
+    if (explicitWiki) {
+        // Keep config.js prefixes ahead of the interwiki map, including for
+        // callers such as slash commands that bypass initialise.js.
+        wikiConfig = explicitWiki;
+        rawPageName = explicitPrefix[2].trim();
+    } else {
+        const interwikiPage = await resolveInterwikiPage(rawPageName, wikiConfig);
+        if (interwikiPage) {
+            wikiConfig = interwikiPage.wikiConfig;
+            rawPageName = interwikiPage.pageName;
+        }
+    }
+
     if (rawPageName.toLowerCase().startsWith("file:")) {
         return await handleFileRequest(wikiConfig, rawPageName.slice(5).trim(), messageOrInteraction);
     }

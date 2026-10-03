@@ -7,6 +7,7 @@ const BOT_USER_AGENT = `${BOT_NAME} Discord bot`;
 // --- CACHING ---
 const CANONICAL_CACHE = new Map();
 const PAGE_DATA_CACHE = new Map();
+const INTERWIKI_CACHE = new Map();
 const MAX_CACHE_SIZE = 500;
 const CACHE_MS = PAGE_CACHE_MS;
 
@@ -257,7 +258,7 @@ async function findCanonicalTitle(input, wikiConfig) {
     return null;
 }
 
-async function getPageData(input, wikiConfig) {
+async function getPageData(input, wikiConfig, { allowSearch = true } = {}) {
     if (!input) return null;
     const raw = String(input).trim();
     const wikiKey = wikiConfig.prefix || wikiConfig.baseUrl;
@@ -297,6 +298,7 @@ async function getPageData(input, wikiConfig) {
 
         // 3. If missing, try intitle search
         if (!page || page.missing !== undefined) {
+            if (!allowSearch) return null;
             const canonical = await findCanonicalTitle(raw, wikiConfig);
             if (canonical && canonical !== raw) {
                 return await getPageData(canonical, wikiConfig);
@@ -322,6 +324,82 @@ async function getPageData(input, wikiConfig) {
         console.warn("getPageData failed:", err.message);
         return null;
     }
+}
+
+function getInterwikiPrefix(input) {
+    const match = String(input || '').trim().match(/^([A-Za-z][A-Za-z0-9_-]*):(.+)$/s);
+    if (!match) return null;
+    return { prefix: match[1], pageName: match[2].trim() };
+}
+
+async function resolveInterwikiPage(input, sourceWikiConfig) {
+    const parsed = getInterwikiPrefix(input);
+    if (!parsed || !sourceWikiConfig) return null;
+
+    const hashIndex = parsed.pageName.indexOf('#');
+    const targetPageName = hashIndex === -1 ? parsed.pageName : parsed.pageName.slice(0, hashIndex).trim();
+    const fragment = hashIndex === -1 ? '' : parsed.pageName.slice(hashIndex + 1).trim();
+    if (!targetPageName) return null;
+
+    const sourceKey = sourceWikiConfig.prefix || sourceWikiConfig.baseUrl;
+    const cacheKey = `${sourceKey}:${parsed.prefix.toLowerCase()}`;
+    let interwiki = getCachedValue(INTERWIKI_CACHE, cacheKey);
+
+    if (interwiki === undefined) {
+        try {
+            const params = new URLSearchParams({
+                action: 'query',
+                meta: 'siteinfo',
+                siprop: 'interwikimap',
+                format: 'json'
+            });
+            const res = await fetch(`${sourceWikiConfig.apiEndpoint}?${params.toString()}`, {
+                headers: { 'User-Agent': BOT_USER_AGENT }
+            });
+            const json = await res.json();
+            const map = json.query?.interwikimap || [];
+            interwiki = map.find(item => String(item.prefix || '').toLowerCase() === parsed.prefix.toLowerCase()) || null;
+            setCachedValue(INTERWIKI_CACHE, cacheKey, interwiki);
+        } catch (err) {
+            console.warn('Interwiki lookup failed:', err?.message || err);
+            return null;
+        }
+    }
+
+    if (!interwiki) return null;
+
+    const articleTemplate = interwiki.url || interwiki.iw_url;
+    if (!articleTemplate) return null;
+
+    const articlePath = articleTemplate.includes('$1')
+        ? articleTemplate.slice(0, articleTemplate.indexOf('$1'))
+        : articleTemplate;
+    let targetBaseUrl;
+    try {
+        targetBaseUrl = new URL(articlePath).origin;
+    } catch {
+        return null;
+    }
+
+    const apiEndpoint = interwiki.api || interwiki.iw_api || `${targetBaseUrl}/w/api.php`;
+    const targetWikiConfig = {
+        name: interwiki.name || interwiki.sitename || interwiki.prefix || parsed.prefix,
+        baseUrl: targetBaseUrl,
+        apiEndpoint,
+        articlePath,
+        prefix: interwiki.prefix || parsed.prefix,
+        emoji: null
+    };
+
+    // The source wiki's interwiki map only describes a destination. Confirm
+    // the actual page exists there before treating the link as embeddable.
+    const pageData = await getPageData(targetPageName, targetWikiConfig, { allowSearch: false });
+    if (!pageData) return null;
+
+    return {
+        wikiConfig: targetWikiConfig,
+        pageName: `${pageData.canonical}${fragment ? `#${fragment}` : ''}`
+    };
 }
 
 async function getSectionChoices(pageTitle, prefix, wikiConfig) {
@@ -638,7 +716,8 @@ module.exports = {
     parseWikiLinks, 
     parseTemplates,
     getFullSizeImageUrl,
-    linkIntroductionPageName
+    linkIntroductionPageName,
+    resolveInterwikiPage
 };
 
 

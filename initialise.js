@@ -32,8 +32,10 @@ const PREFIX_WIKI_MAP = Object.keys(WIKIS).reduce((acc, key) => {
     return acc;
 }, {});
 
-// joins all prefixes into a string like "a|b|c"
-const prefixPattern = Object.values(WIKIS).map(w => w.prefix).join('|');
+// Interwiki prefixes are not limited to the wikis configured in config.js.
+// Configured prefixes are still resolved first below; this pattern only makes
+// other prefixes reach the MediaWiki interwiki resolver.
+const prefixPattern = '[A-Za-z][A-Za-z0-9_-]*';
 
 const syntaxRegex = new RegExp(
     `\\{\\{(?:(${prefixPattern}):)?([^{}|]+)(?:\\|[^{}]*)?\\}\\}|` +
@@ -80,12 +82,18 @@ function getWikiAndPage(messageContent, channel) {
     if (!match) return null;
 
     const prefix = match[1] || match[3];
-    let rawPageName = (match[2] || match[4]).trim();
+    const matchedPageName = (match[2] || match[4]).trim();
+    let rawPageName = matchedPageName;
 
     let wikiConfig = null;
     if (prefix) {
         // Explicit prefixes override the wiki configured for this channel.
         wikiConfig = WIKIS[PREFIX_WIKI_MAP[prefix.toLowerCase()]];
+        // Unknown prefixes may be MediaWiki interwiki prefixes. Keep the
+        // original prefix in the page name until handleUserRequest confirms
+        // it through the source wiki's interwiki map. This also preserves
+        // ordinary local namespaces such as [[File:...]].
+        if (!wikiConfig) rawPageName = `${prefix}:${matchedPageName}`;
     } else {
         // The same config map supports both channel-specific and category-wide
         // defaults. Put the channel first so a channel override wins over its
