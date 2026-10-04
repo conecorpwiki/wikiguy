@@ -1,5 +1,5 @@
 const { fetch, truncateToParagraphs: truncateContentToParagraphs } = require("./utils.js");  
-const { BOT_NAME, PAGE_CACHE_MS } = require("../config.js");
+const { BOT_NAME, PAGE_CACHE_MS, WIKIS } = require("../config.js");
 const cheerio = require('cheerio');
 
 const BOT_USER_AGENT = `${BOT_NAME} Discord bot`;
@@ -342,28 +342,41 @@ async function resolveInterwikiPage(input, sourceWikiConfig, depth = 0) {
     const fragment = hashIndex === -1 ? '' : parsed.pageName.slice(hashIndex + 1).trim();
     if (!targetPageName) return null;
 
-    const sourceKey = sourceWikiConfig.prefix || sourceWikiConfig.baseUrl;
-    const cacheKey = `${sourceKey}:${parsed.prefix.toLowerCase()}`;
-    let interwiki = getCachedValue(INTERWIKI_CACHE, cacheKey);
+    const sourceConfigs = [
+        sourceWikiConfig,
+        ...Object.values(WIKIS).filter(wiki => wiki !== sourceWikiConfig)
+    ];
+    let interwiki = null;
 
-    if (interwiki === undefined) {
-        try {
-            const params = new URLSearchParams({
-                action: 'query',
-                meta: 'siteinfo',
-                siprop: 'interwikimap',
-                format: 'json'
-            });
-            const res = await fetch(`${sourceWikiConfig.apiEndpoint}?${params.toString()}`, {
-                headers: { 'User-Agent': BOT_USER_AGENT }
-            });
-            const json = await res.json();
-            const map = json.query?.interwikimap || [];
-            interwiki = map.find(item => String(item.prefix || '').toLowerCase() === parsed.prefix.toLowerCase()) || null;
-            setCachedValue(INTERWIKI_CACHE, cacheKey, interwiki);
-        } catch (err) {
-            console.warn('Interwiki lookup failed:', err?.message || err);
-            return null;
+    for (const candidateWiki of sourceConfigs) {
+        const sourceKey = candidateWiki.prefix || candidateWiki.baseUrl;
+        const cacheKey = `${sourceKey}:${parsed.prefix.toLowerCase()}`;
+        let candidateInterwiki = getCachedValue(INTERWIKI_CACHE, cacheKey);
+
+        if (candidateInterwiki === undefined) {
+            try {
+                const params = new URLSearchParams({
+                    action: 'query',
+                    meta: 'siteinfo',
+                    siprop: 'interwikimap',
+                    format: 'json'
+                });
+                const res = await fetch(`${candidateWiki.apiEndpoint}?${params.toString()}`, {
+                    headers: { 'User-Agent': BOT_USER_AGENT }
+                });
+                const json = await res.json();
+                const map = json.query?.interwikemap || [];
+                candidateInterwiki = map.find(item => String(item.prefix || '').toLowerCase() === parsed.prefix.toLowerCase()) || null;
+                setCachedValue(INTERWIKI_CACHE, cacheKey, candidateInterwiki);
+            } catch (err) {
+                console.warn('interwiki lookup failed:', err?.message || err);
+                continue;
+            }
+        }
+
+        if (candidateInterwiki) {
+            interwiki = candidateInterwiki;
+            break;
         }
     }
 
@@ -405,8 +418,16 @@ async function resolveInterwikiPage(input, sourceWikiConfig, depth = 0) {
         }
     }
 
-    // The source wiki's interwiki map only describes a destination. Confirm
-    // the actual page exists there before treating the link as embeddable.
+    // special pages do not appear in the regular page query.
+    if (/^Special:/i.test(targetPageName)) {
+        return {
+            wikiConfig: targetWikiConfig,
+            pageName: `${targetPageName}${fragment ? `#${fragment}` : ''}`
+        };
+    }
+
+    // the interwiki map only describes a destination. confirm the actual page
+    // exists there before treating the link as embeddable.
     const pageData = await getPageData(targetPageName, targetWikiConfig, { allowSearch: false });
     if (!pageData) return null;
 
