@@ -332,6 +332,85 @@ function getInterwikiPrefix(input) {
     return { prefix: match[1], pageName: match[2].trim() };
 }
 
+async function getInterwikiEntries(sourceWikiConfig, prefix) {
+    const sourceKey = sourceWikiConfig.prefix || sourceWikiConfig.baseUrl;
+    const cacheKey = `${sourceKey}:${prefix.toLowerCase()}`;
+    const cached = getCachedValue(INTERWIKI_CACHE, cacheKey);
+    if (cached !== undefined) return cached;
+
+    const entries = [];
+    const addEntry = entry => {
+        if (!entry?.url || !String(entry.url).includes('$1')) return;
+        if (!entries.some(existing => existing.url === entry.url)) entries.push(entry);
+    };
+
+    try {
+        const params = new URLSearchParams({
+            action: 'query',
+            meta: 'siteinfo',
+            siprop: 'interwikimap',
+            format: 'json'
+        });
+        const res = await fetch(`${sourceWikiConfig.apiEndpoint}?${params.toString()}`, {
+            headers: { 'User-Agent': BOT_USER_AGENT }
+        });
+        const json = await res.json();
+        for (const entry of json.query?.interwikemap || []) {
+            if (String(entry.prefix || '').toLowerCase() === prefix.toLowerCase()) addEntry(entry);
+        }
+    } catch (err) {
+        console.warn('interwiki api lookup failed:', err?.message || err);
+    }
+
+    try {
+        const res = await fetch(`${sourceWikiConfig.baseUrl}/Special:Interwiki`, {
+            headers: { 'User-Agent': BOT_USER_AGENT }
+        });
+        const $ = cheerio.load(await res.text());
+        $('.mw-interwikitable-row').each((_, row) => {
+            const cells = $(row).find('td');
+            const rowPrefix = cells.eq(0).text().trim();
+            const rowUrl = cells.filter('.mw-interwikitable-url').first().text().trim();
+            if (rowPrefix.toLowerCase() === prefix.toLowerCase()) {
+                addEntry({ prefix: rowPrefix, url: rowUrl });
+            }
+        });
+    } catch (err) {
+        console.warn('special interwiki lookup failed:', err?.message || err);
+    }
+
+    setCachedValue(INTERWIKI_CACHE, cacheKey, entries);
+    return entries;
+}
+
+function selectInterwikiEntry(entries, pageName) {
+    if (entries.length <= 1) return entries[0] || null;
+
+    const pagePartCount = pageName.split(':').length;
+    const matchingEntries = entries.filter(entry => {
+        const placeholders = new Set(String(entry.url).match(/\$(\d+)/g) || []);
+        return placeholders.size === pagePartCount;
+    });
+    return matchingEntries[0] || entries[0];
+}
+
+function expandInterwikiTemplate(template, pageName) {
+    const pageParts = pageName.split(':');
+    const placeholders = [...String(template).matchAll(/\$(\d+)/g)].map(match => Number(match[1]));
+    const maxPlaceholder = Math.max(...placeholders, 1);
+    const values = new Map();
+
+    for (let index = 1; index <= maxPlaceholder; index++) {
+        const value = pageParts[pageParts.length - index] || '';
+        values.set(index, value.replace(/ /g, '_'));
+    }
+
+    return String(template).replace(/\$(\d+)/g, (_, index) => {
+        const value = values.get(Number(index)) || '';
+        return Number(index) === 1 ? '$1' : encodeURIComponent(value);
+    });
+}
+
 async function resolveInterwikiPage(input, sourceWikiConfig, depth = 0) {
     const parsed = getInterwikiPrefix(input);
     if (!parsed || !sourceWikiConfig) return null;
@@ -349,31 +428,8 @@ async function resolveInterwikiPage(input, sourceWikiConfig, depth = 0) {
     let interwiki = null;
 
     for (const candidateWiki of sourceConfigs) {
-        const sourceKey = candidateWiki.prefix || candidateWiki.baseUrl;
-        const cacheKey = `${sourceKey}:${parsed.prefix.toLowerCase()}`;
-        let candidateInterwiki = getCachedValue(INTERWIKI_CACHE, cacheKey);
-
-        if (candidateInterwiki === undefined) {
-            try {
-                const params = new URLSearchParams({
-                    action: 'query',
-                    meta: 'siteinfo',
-                    siprop: 'interwikimap',
-                    format: 'json'
-                });
-                const res = await fetch(`${candidateWiki.apiEndpoint}?${params.toString()}`, {
-                    headers: { 'User-Agent': BOT_USER_AGENT }
-                });
-                const json = await res.json();
-                const map = json.query?.interwikemap || [];
-                candidateInterwiki = map.find(item => String(item.prefix || '').toLowerCase() === parsed.prefix.toLowerCase()) || null;
-                setCachedValue(INTERWIKI_CACHE, cacheKey, candidateInterwiki);
-            } catch (err) {
-                console.warn('interwiki lookup failed:', err?.message || err);
-                continue;
-            }
-        }
-
+        const entries = await getInterwikiEntries(candidateWiki, parsed.prefix);
+        const candidateInterwiki = selectInterwikiEntry(entries, targetPageName);
         if (candidateInterwiki) {
             interwiki = candidateInterwiki;
             break;
@@ -385,9 +441,11 @@ async function resolveInterwikiPage(input, sourceWikiConfig, depth = 0) {
     const articleTemplate = interwiki.url || interwiki.iw_url;
     if (!articleTemplate) return null;
 
-    const articlePath = articleTemplate.includes('$1')
-        ? articleTemplate.slice(0, articleTemplate.indexOf('$1'))
-        : articleTemplate;
+    const expandedTemplate = expandInterwikiTemplate(articleTemplate, targetPageName);
+    const articlePath = expandedTemplate.slice(0, expandedTemplate.indexOf('$1'));
+    const templateParts = targetPageName.split(':');
+    const placeholderCount = new Set(articleTemplate.match(/\$(\d+)/g) || []).size;
+    const resolvedPageName = placeholderCount > 1 ? templateParts.at(-1) : targetPageName;
     let targetBaseUrl;
     try {
         targetBaseUrl = new URL(articlePath).origin;
@@ -407,9 +465,9 @@ async function resolveInterwikiPage(input, sourceWikiConfig, depth = 0) {
 
     // resolve nested interwiki links
     // the first prefix can point at a wiki whose own interwiki map contains the next prefix.
-    const nestedPage = getInterwikiPrefix(targetPageName);
-    if (nestedPage) {
-        const resolvedNestedPage = await resolveInterwikiPage(targetPageName, targetWikiConfig, depth + 1);
+    const nestedPage = getInterwikiPrefix(resolvedPageName);
+    if (nestedPage && placeholderCount === 1) {
+        const resolvedNestedPage = await resolveInterwikiPage(resolvedPageName, targetWikiConfig, depth + 1);
         if (resolvedNestedPage) {
             return {
                 wikiConfig: resolvedNestedPage.wikiConfig,
@@ -419,16 +477,16 @@ async function resolveInterwikiPage(input, sourceWikiConfig, depth = 0) {
     }
 
     // special pages do not appear in the regular page query.
-    if (/^Special:/i.test(targetPageName)) {
+    if (/^Special:/i.test(resolvedPageName)) {
         return {
             wikiConfig: targetWikiConfig,
-            pageName: `${targetPageName}${fragment ? `#${fragment}` : ''}`
+            pageName: `${resolvedPageName}${fragment ? `#${fragment}` : ''}`
         };
     }
 
     // the interwiki map only describes a destination. confirm the actual page
     // exists there before treating the link as embeddable.
-    const pageData = await getPageData(targetPageName, targetWikiConfig, { allowSearch: false });
+    const pageData = await getPageData(resolvedPageName, targetWikiConfig, { allowSearch: false });
     if (!pageData) return null;
 
     return {
