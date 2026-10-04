@@ -332,9 +332,10 @@ function getInterwikiPrefix(input) {
     return { prefix: match[1], pageName: match[2].trim() };
 }
 
-async function resolveInterwikiPage(input, sourceWikiConfig) {
+async function resolveInterwikiPage(input, sourceWikiConfig, depth = 0) {
     const parsed = getInterwikiPrefix(input);
     if (!parsed || !sourceWikiConfig) return null;
+    if (depth > 3) return null;
 
     const hashIndex = parsed.pageName.indexOf('#');
     const targetPageName = hashIndex === -1 ? parsed.pageName : parsed.pageName.slice(0, hashIndex).trim();
@@ -390,6 +391,19 @@ async function resolveInterwikiPage(input, sourceWikiConfig) {
         prefix: interwiki.prefix || parsed.prefix,
         emoji: null
     };
+
+    // resolve nested interwiki links
+    // the first prefix can point at a wiki whose own interwiki map contains the next prefix.
+    const nestedPage = getInterwikiPrefix(targetPageName);
+    if (nestedPage) {
+        const resolvedNestedPage = await resolveInterwikiPage(targetPageName, targetWikiConfig, depth + 1);
+        if (resolvedNestedPage) {
+            return {
+                wikiConfig: resolvedNestedPage.wikiConfig,
+                pageName: `${resolvedNestedPage.pageName}${fragment ? `#${fragment}` : ''}`
+            };
+        }
+    }
 
     // The source wiki's interwiki map only describes a destination. Confirm
     // the actual page exists there before treating the link as embeddable.
