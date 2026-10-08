@@ -71,14 +71,14 @@ async function getContributionScores(wikiConfig) {
 
 async function handleContribScoresRequest(interaction, { toggleContribScore, WIKIS, buildPageEmbed, botToAuthorMap, pruneMap, MessageFlags }) {
     if (!toggleContribScore) {
-        await interaction.reply({ content: 'Contribution scores are currently disabled.', ephemeral: true });
+        await interaction.reply({ content: 'Contribution scores are currently disabled.', flags: MessageFlags.Ephemeral });
         return;
     }
     const wikiKey = interaction.options.getString('wiki') || (Object.keys(WIKIS).length === 1 ? Object.keys(WIKIS)[0] : null);
     const wikiConfig = WIKIS[wikiKey];
 
     if (!wikiConfig) {
-       await interaction.reply({ content: 'Unknown wiki selection.', ephemeral: true });
+       await interaction.reply({ content: 'Unknown wiki selection.', flags: MessageFlags.Ephemeral });
        return;
     }
 
@@ -107,11 +107,15 @@ async function handleContribScoresRequest(interaction, { toggleContribScore, WIK
         }
     } catch (err) {
         console.error("Error in handleContribScoresRequest:", err);
+        if (err?.code === 10062) {
+            console.error("Failed to respond to contribution scores: interaction expired or was already acknowledged.");
+            return;
+        }
         try {
             if (interaction.deferred || interaction.replied) {
                 await interaction.editReply({ content: "An error occurred while fetching contribution scores." });
             } else {
-                await interaction.reply({ content: "An error occurred while fetching contribution scores.", ephemeral: true });
+                await interaction.reply({ content: "An error occurred while fetching contribution scores.", flags: MessageFlags.Ephemeral });
             }
         } catch (secondaryErr) {
             console.error("Failed to send error reply:", secondaryErr);

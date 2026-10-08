@@ -3,6 +3,25 @@ let fetchInstance;
  * Lazy-loading node-fetch wrapper.
  * Requires Node.js >= 17.3.0 for AbortSignal.timeout support in callers.
  */
+async function retry(operation, label, attempts = 3) {
+    let lastError;
+
+    for (let attempt = 1; attempt <= attempts; attempt++) {
+        try {
+            console.log(`${label} (${attempt}/${attempts})`);
+            return await operation();
+        } catch (err) {
+            lastError = err;
+            if (attempt === attempts) break;
+
+            console.warn(`${label} failed on attempt ${attempt}/${attempts}: ${err.message}`);
+        }
+    }
+
+    console.error(`${label} failed after ${attempts} attempts:`, lastError?.message || lastError);
+    throw lastError;
+}
+
 const fetch = async (...args) => {
     if (!fetchInstance) {
         const module = await import("node-fetch");
@@ -10,15 +29,24 @@ const fetch = async (...args) => {
     }
 
     let [urlOrRequest, options = {}] = args;
-    const newOptions = { ...options };
+    const hasExplicitSignal = Boolean(options.signal);
 
-    // Add a default 10s timeout if no signal is explicitly provided in options.
-    // This prevents hanging requests from leaking resources.
-    if (AbortSignal.timeout && !newOptions.signal) {
-        newOptions.signal = AbortSignal.timeout(10000);
-    }
+    return retry(async () => {
+        const requestOptions = { ...options };
 
-    return fetchInstance(urlOrRequest, newOptions);
+        // add a fresh timeout for each attempt so one timeout does not cancel all retries.
+        if (AbortSignal.timeout && !hasExplicitSignal) {
+            requestOptions.signal = AbortSignal.timeout(10000);
+        }
+
+        const response = await fetchInstance(urlOrRequest, requestOptions);
+
+        if (response.status >= 500 || response.status === 429) {
+            throw new Error(`HTTP ${response.status}`);
+        }
+
+        return response;
+    }, `fetch ${typeof urlOrRequest === "string" ? urlOrRequest : "request"}`);
 };
 
 /**
@@ -59,4 +87,4 @@ function truncateToParagraphs(text, maxParagraphs = 2, maxCharacters = null) {
     return result;
 }
 
-module.exports = { fetch, truncateToParagraphs };
+module.exports = { fetch, retry, truncateToParagraphs };
