@@ -318,10 +318,18 @@ async function handleUserRequest(wikiConfig, rawPageName, messageOrInteraction, 
         wikiConfig = explicitWiki;
         rawPageName = explicitPrefix[2].trim();
     } else {
-        const interwikiPage = await resolveInterwikiPage(rawPageName, wikiConfig);
-        if (interwikiPage) {
-            wikiConfig = interwikiPage.wikiConfig;
-            rawPageName = interwikiPage.pageName;
+        // namespace links are also valid page names. check the configured wiki
+        // first so [[File:...]] and [[User:...]] do not trigger a slow
+        // interwiki lookup when the local page exists.
+        const localPageName = String(rawPageName).split('#', 1)[0].trim();
+        const localPage = await getPageData(localPageName, wikiConfig, { allowSearch: false });
+
+        if (!localPage) {
+            const interwikiPage = await resolveInterwikiPage(rawPageName, wikiConfig);
+            if (interwikiPage) {
+                wikiConfig = interwikiPage.wikiConfig;
+                rawPageName = interwikiPage.pageName;
+            }
         }
     }
 
