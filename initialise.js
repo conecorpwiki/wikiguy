@@ -9,6 +9,7 @@ const {
     botToAuthorMap,
     pruneMap
 } = require("./bot/interactions.js");
+const { findSyntaxMatch } = require("./bot/messageParser.js");
 
 const {
     Client,
@@ -31,17 +32,6 @@ const PREFIX_WIKI_MAP = Object.keys(WIKIS).reduce((acc, key) => {
     if (prefix) acc[prefix] = key;
     return acc;
 }, {});
-
-// Interwiki prefixes are not limited to the wikis configured in config.js.
-// Configured prefixes are still resolved first below; this pattern only makes
-// other prefixes reach the MediaWiki interwiki resolver.
-const prefixPattern = '[A-Za-z][A-Za-z0-9_-]*';
-
-const syntaxRegex = new RegExp(
-    `\\{\\{(?:(${prefixPattern}):)?([^{}|]+)(?:\\|[^{}]*)?\\}\\}|` +
-    `\\[\\[(?:(${prefixPattern}):)?([^\\]|]+)(?:\\|[^[\\]]*)?\\]\\]`,
-    "i"
-);
 
 // -------------------- CLIENT SETUP --------------------
 const client = new Client({
@@ -78,7 +68,7 @@ function isUnknownMessageError(error) {
 function getWikiAndPage(messageContent, channel) {
     if (typeof messageContent !== "string") return null;
 
-    const match = messageContent.match(syntaxRegex);
+    const match = findSyntaxMatch(messageContent);
     if (!match) return null;
 
     const prefix = match[1] || match[3];
