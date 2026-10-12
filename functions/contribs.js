@@ -1,5 +1,6 @@
 const { fetch } = require("./utils.js");
-const { BOT_NAME, CONTRIBSCORES_SCORE_EMOJI } = require("../config.js");
+const { EMOJIS } = require("../config.js");
+const { getBotName } = require("../bot/name.js");
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
 async function getContributionScores(wikiConfig) {
@@ -13,7 +14,7 @@ async function getContributionScores(wikiConfig) {
         });
 
         const url = `${wikiConfig.apiEndpoint}?${params.toString()}`;
-        const res = await fetch(url, { headers: { "User-Agent": `${BOT_NAME} Discord bot` } });
+        const res = await fetch(url, { headers: { "User-Agent": `${getBotName()} Discord bot` } });
         const json = await res.json();
         const html = json.parse?.text?.["*"];
 
@@ -51,7 +52,8 @@ async function getContributionScores(wikiConfig) {
             const paddedEdits = data.edits.padStart(maxEditLength, ' ');
             const usernamePath = encodeURIComponent(data.user.trim().replace(/\s+/g, "_"));
         
-            dataSummary += `${i + 1}. <:playerpoint:${CONTRIBSCORES_SCORE_EMOJI}> \`${paddedScore}\`    ✏️ \`${paddedEdits}\`    **[@${data.user}](${wikiConfig.articlePath}User:${usernamePath})**\n`;
+            const scoreEmoji = EMOJIS?.contribs ? `<:playerpoint:${EMOJIS.contribs}> ` : "";
+            dataSummary += `${i + 1}. ${scoreEmoji}\`${paddedScore}\`    ✏️ \`${paddedEdits}\`    **[@${data.user}](${wikiConfig.articlePath}User:${usernamePath})**\n`;
         });
 
         if (!dataSummary) return {

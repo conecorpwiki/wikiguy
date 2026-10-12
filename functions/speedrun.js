@@ -1,6 +1,7 @@
 const { fetch } = require("./utils.js");
 const { ContainerBuilder, SectionBuilder, TextDisplayBuilder, ActionRowBuilder, ButtonBuilder, ButtonStyle, MessageFlags } = require("discord.js");
-const { WIKIS, SPEEDRUN_EMOJI, BOT_NAME } = require("../config.js");
+const { WIKIS, EMOJIS } = require("../config.js");
+const { getBotName } = require("../bot/name.js");
 const { getPageData } = require("./page.js");
 
 const SB64_CATEGORY_IDS = {
@@ -225,7 +226,7 @@ async function getLeaderboardData(gameId, categoryId, levelId = null, variables 
     }
 
     const res = await fetch(url, {
-        headers: { "User-Agent": `${BOT_NAME} Discord bot` },
+        headers: { "User-Agent": `${getBotName()} Discord bot` },
         signal: AbortSignal.timeout(5000)
     });
     if (!res.ok) {
@@ -319,7 +320,7 @@ async function handleSpeedrunRequest(interaction, gameKey, categoryId, levelId =
             .setLabel("View list")
             .setStyle(ButtonStyle.Link)
             .setURL(leaderboard.weblink);
-        if (SPEEDRUN_EMOJI) button.setEmoji(SPEEDRUN_EMOJI);
+        if (EMOJIS?.speedrun) button.setEmoji(EMOJIS.speedrun);
         row.addComponents(button);
 
         container.addActionRowComponents(row);

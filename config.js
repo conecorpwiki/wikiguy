@@ -16,7 +16,8 @@ const WIKIS = {
         apiEndpoint: "https://sr.conecorp.cc/w/api.php",
         articlePath: "https://sr.conecorp.cc/",
         prefix: "sr",
-        emoji: "1472436382998728714"
+        emoji: "1472436382998728714",
+        default: true
     },
     "a-blocks-journey": {
         name: "A Block's Journey",
@@ -35,8 +36,6 @@ const WIKI_MAP = {
     "1454904248943771748": "a-blocks-journey"
 };
 
-const DEFAULT_WIKI = "superstar-racers";
-
 // Enable or disable slash commands. Disabled commands are not registered with Discord.
 const COMMANDS = {
     speedrun: true,
@@ -47,8 +46,12 @@ const COMMANDS = {
     random: true,
 };
 
-const SPEEDRUN_EMOJI = "1477323785366540439";
-const CONTRIBSCORES_SCORE_EMOJI = "1472433775593000961";
+const EMOJIS = {
+    speedrun: "1477323785366540439",
+    contribs: "1472433775593000961"
+};
+
+const WEB_SERVER = true;
 
 const STATUS_INTERVAL_MS = 5 * 60 * 1000;
 const PAGE_CACHE_MS = 30 * 60 * 1000;
@@ -76,11 +79,10 @@ const STATUS_OPTIONS = [
 module.exports = {
     BOT_NAME,
     WIKIS,
-    WIKI_MAP,
-    DEFAULT_WIKI,
+    WIKI_MAP: typeof WIKI_MAP !== "undefined" ? WIKI_MAP : undefined,
     COMMANDS,
-    SPEEDRUN_EMOJI,
-    CONTRIBSCORES_SCORE_EMOJI,
+    EMOJIS,
+    WEB_SERVER,
     STATUS_INTERVAL_MS,
     PAGE_CACHE_MS,
     STATUS_OPTIONS

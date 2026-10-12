@@ -1,6 +1,6 @@
 // Copy this file to config.js and replace the example values.
 // --- WIKI CONFIGURATION ---
-const BOT_NAME = "Wiki Guy";
+const BOT_NAME = "";
 
 const WIKIS = {
     "example-wiki": {
@@ -9,16 +9,12 @@ const WIKIS = {
         apiEndpoint: "https://example.com/w/api.php",
         articlePath: "https://example.com/",
         prefix: "example",
-        emoji: "DISCORD_EMOJI_ID"
+        default: true
     }
 };
 
-// Map a channel or category ID to a wiki.
-const WIKI_MAP = {
-    "DISCORD_CHANNEL_OR_CATEGORY_ID": "example-wiki"
-};
-
-const DEFAULT_WIKI = "example-wiki";
+// optional: map channel or category IDs to a wiki.
+const WIKI_MAP = undefined;
 
 // Enable or disable slash commands. Disabled commands are not registered with Discord.
 const COMMANDS = {
@@ -29,8 +25,11 @@ const COMMANDS = {
     user: true,
     random: true,
 };
-const SPEEDRUN_EMOJI = "DISCORD_EMOJI_ID";
-const CONTRIBSCORES_SCORE_EMOJI = "DISCORD_EMOJI_ID";
+const EMOJIS = {
+    speedrun: "",
+    contribs: ""
+};
+const WEB_SERVER = true;
 const STATUS_INTERVAL_MS = 5 * 60 * 1000;
 const PAGE_CACHE_MS = 30 * 60 * 1000;
 
@@ -42,11 +41,10 @@ const STATUS_OPTIONS = [
 module.exports = {
     BOT_NAME,
     WIKIS,
-    WIKI_MAP,
-    DEFAULT_WIKI,
+    WIKI_MAP: typeof WIKI_MAP !== "undefined" ? WIKI_MAP : undefined,
     COMMANDS,
-    SPEEDRUN_EMOJI,
-    CONTRIBSCORES_SCORE_EMOJI,
+    EMOJIS,
+    WEB_SERVER,
     STATUS_INTERVAL_MS,
     PAGE_CACHE_MS,
     STATUS_OPTIONS

@@ -20,9 +20,9 @@ const {
 const {
     WIKIS,
     WIKI_MAP,
-    DEFAULT_WIKI,
     STATUS_INTERVAL_MS
 } = require("./config.js");
+const { setDiscordBotName } = require("./bot/name.js");
 
 const DISCORD_TOKEN = process.env.DISCORD_TOKEN;
 
@@ -48,6 +48,7 @@ const client = new Client({
 
 client.once("ready", async () => {
     console.log(`Logged in as ${client.user.tag}`);
+    setDiscordBotName(client.user.username);
     setRandomStatus(client);
     setInterval(() => { setRandomStatus(client); }, STATUS_INTERVAL_MS);
 
@@ -89,7 +90,9 @@ function getWikiAndPage(messageContent, channel) {
     // no WIKI_MAP export yet. The default wiki still handles the message.
     const wikiMap = WIKI_MAP || {};
     const configuredId = channelAndCategoryIds.find(id => wikiMap[id]);
-    const defaultWikiKey = wikiMap[configuredId] || DEFAULT_WIKI;
+    const defaultWikiKey = wikiMap[configuredId]
+        || Object.keys(WIKIS).find(key => WIKIS[key].default)
+        || Object.keys(WIKIS)[0];
     const defaultWikiConfig = WIKIS[defaultWikiKey];
 
     let wikiConfig = null;

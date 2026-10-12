@@ -1,4 +1,5 @@
 const express = require('express');
+const { getBotName } = require('./name.js');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -6,7 +7,7 @@ app.get('/', (req, res) => {
   res.send(`
     <html>
       <head>
-        <title>Orbital is orbiting</title>
+        <title>${getBotName()} is online</title>
         <style>
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,100..900;1,100..900&display=swap');
 
@@ -15,7 +16,7 @@ app.get('/', (req, res) => {
         </style>
       </head>
       <body>
-        <h1>Orbital Discord Bot</h1>
+        <h1>${getBotName()}</h1>
         <p>Bot is running.</p>
       </body>
     </html>
@@ -25,7 +26,7 @@ app.get('/', (req, res) => {
 app.get('/status', (req, res) => {
   res.json({
     status: 'online',
-    bot: 'Orbital Discord Bot',
+    bot: getBotName(),
     timestamp: new Date().toISOString()
   });
 });

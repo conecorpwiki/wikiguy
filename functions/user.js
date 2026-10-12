@@ -1,8 +1,8 @@
 const cheerio = require("cheerio");
 const { fetch } = require("./utils.js");
 const { getPageData } = require("./page.js");
-const { BOT_NAME } = require("../config.js");
-const BOT_USER_AGENT = `${BOT_NAME} Discord bot`;
+const { getBotName } = require("../bot/name.js");
+const getBotUserAgent = () => `${getBotName()} Discord bot`;
 
 async function getUserProfile(username, wikiConfig) {
     const normalized = String(username).trim().replace(/^User\s*:\s*/i, "").replace(/^@/, "");
@@ -10,14 +10,14 @@ async function getUserProfile(username, wikiConfig) {
     const usernamePath = encodeURIComponent(normalized.replace(/\s+/g, "_"));
     const params = new URLSearchParams({ action: "query", format: "json", list: "users", ususers: normalized, usprop: "groups|editcount" });
     try {
-        const response = await fetch(`${wikiConfig.apiEndpoint}?${params}`, { headers: { "User-Agent": BOT_USER_AGENT } });
+        const response = await fetch(`${wikiConfig.apiEndpoint}?${params}`, { headers: { "User-Agent": getBotUserAgent() } });
         if (!response.ok) return null;
         const user = (await response.json()).query?.users?.[0];
         if (!user || user.invalid !== undefined || user.userid === 0) return null;
         let avatarUrl = null;
         try {
             const profileUrl = `${wikiConfig.articlePath}User:${usernamePath}`;
-            const profileResponse = await fetch(profileUrl, { headers: { "User-Agent": BOT_USER_AGENT } });
+        const profileResponse = await fetch(profileUrl, { headers: { "User-Agent": getBotUserAgent() } });
             if (profileResponse.ok) {
                 const $profile = cheerio.load(await profileResponse.text());
                 avatarUrl = $profile("img.profile-avatar-image").first().attr("src") || null;
@@ -33,7 +33,7 @@ async function getUserProfile(username, wikiConfig) {
         if (visibleGroups.length) {
             try {
                 const labelParams = new URLSearchParams({ action: "query", format: "json", meta: "allmessages", ammessages: visibleGroups.map(group => `group-${group}-member`).join("|"), amlang: "content" });
-                const messages = (await (await fetch(`${wikiConfig.apiEndpoint}?${labelParams}`, { headers: { "User-Agent": BOT_USER_AGENT } })).json()).query?.allmessages || [];
+        const messages = (await (await fetch(`${wikiConfig.apiEndpoint}?${labelParams}`, { headers: { "User-Agent": getBotUserAgent() } })).json()).query?.allmessages || [];
                 Object.assign(labels, Object.fromEntries(messages.filter(message => message['*'] && !message['*'].includes("⧼")).map(message => [message.name, message['*']])));
             } catch (err) { console.warn("Failed to fetch on-wiki group labels:", err.message); }
         }

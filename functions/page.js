@@ -1,8 +1,9 @@
 const { fetch, truncateToParagraphs: truncateContentToParagraphs } = require("./utils.js");  
-const { BOT_NAME, PAGE_CACHE_MS, WIKIS } = require("../config.js");
+const { PAGE_CACHE_MS, WIKIS } = require("../config.js");
+const { getBotName } = require("../bot/name.js");
 const cheerio = require('cheerio');
 
-const BOT_USER_AGENT = `${BOT_NAME} Discord bot`;
+const getBotUserAgent = () => `${getBotName()} Discord bot`;
 
 // --- CACHING ---
 const CANONICAL_CACHE = new Map();
@@ -217,7 +218,7 @@ async function findCanonicalTitle(input, wikiConfig) {
         });
 
         const res = await fetch(`${wikiConfig.apiEndpoint}?${directParams.toString()}`, { 
-            headers: { "User-Agent": BOT_USER_AGENT } 
+            headers: { "User-Agent": getBotUserAgent() }
         });
         const json = await res.json();
         const pageId = json.query?.pageids?.[0];
@@ -240,7 +241,7 @@ async function findCanonicalTitle(input, wikiConfig) {
         });
 
         const searchRes = await fetch(`${wikiConfig.apiEndpoint}?${searchParams.toString()}`, {
-            headers: { "User-Agent": BOT_USER_AGENT }
+            headers: { "User-Agent": getBotUserAgent() }
         });
         const searchJson = await searchRes.json();
         const topResult = searchJson.query?.search?.[0];
@@ -289,7 +290,7 @@ async function getPageData(input, wikiConfig, { allowSearch = true } = {}) {
         });
 
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params.toString()}`, {
-            headers: { "User-Agent": BOT_USER_AGENT }
+            headers: { "User-Agent": getBotUserAgent() }
         });
         const json = await res.json();
 
@@ -352,7 +353,7 @@ async function getInterwikiEntries(sourceWikiConfig, prefix) {
             format: 'json'
         });
         const res = await fetch(`${sourceWikiConfig.apiEndpoint}?${params.toString()}`, {
-            headers: { 'User-Agent': BOT_USER_AGENT }
+            headers: { 'User-Agent': getBotUserAgent() }
         });
         const json = await res.json();
         for (const entry of json.query?.interwikemap || []) {
@@ -364,7 +365,7 @@ async function getInterwikiEntries(sourceWikiConfig, prefix) {
 
     try {
         const res = await fetch(`${sourceWikiConfig.baseUrl}/Special:Interwiki`, {
-            headers: { 'User-Agent': BOT_USER_AGENT }
+            headers: { 'User-Agent': getBotUserAgent() }
         });
         const $ = cheerio.load(await res.text());
         $('.mw-interwikitable-row').each((_, row) => {
@@ -500,7 +501,7 @@ async function getSectionChoices(pageTitle, prefix, wikiConfig) {
     const canonical = await findCanonicalTitle(pageTitle, wikiConfig) || pageTitle;
     const params = new URLSearchParams({ action: "parse", format: "json", prop: "sections", page: canonical });
     try {
-        const res = await fetch(`${wikiConfig.apiEndpoint}?${params}`, { headers: { "User-Agent": BOT_USER_AGENT } });
+        const res = await fetch(`${wikiConfig.apiEndpoint}?${params}`, { headers: { "User-Agent": getBotUserAgent() } });
         const sections = (await res.json()).parse?.sections || [];
         const search = String(prefix || "").toLowerCase();
         return sections
@@ -527,7 +528,7 @@ async function getWikiContent(pageTitle, wikiConfig) {
     try {
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params.toString()}`, {
             headers: {
-                "User-Agent": BOT_USER_AGENT,
+                "User-Agent": getBotUserAgent(),
                 "Origin": wikiConfig.baseUrl,
             },
         });
@@ -556,7 +557,7 @@ async function getSectionIndex(pageTitle, sectionName, wikiConfig) {
 
     try {
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params}`, {
-            headers: { "User-Agent": BOT_USER_AGENT }
+            headers: { "User-Agent": getBotUserAgent() }
         });
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);
         const json = await res.json();
@@ -619,7 +620,7 @@ async function getSectionContent(pageTitle, sectionName, wikiConfig) {
 
     try {
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params}`, {
-            headers: { "User-Agent": BOT_USER_AGENT }
+            headers: { "User-Agent": getBotUserAgent() }
         });
         const json = await res.json();
 
@@ -676,7 +677,7 @@ async function getLeadSection(pageTitle, wikiConfig) {
 
     try {
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params.toString()}`, {
-            headers: { "User-Agent": BOT_USER_AGENT }
+            headers: { "User-Agent": getBotUserAgent() }
         });
         const json = await res.json();
         const pages = json.query?.pages;

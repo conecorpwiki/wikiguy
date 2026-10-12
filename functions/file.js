@@ -1,5 +1,5 @@
 const { fetch } = require("./utils.js");
-const { BOT_NAME } = require("../config.js");
+const { getBotName } = require("../bot/name.js");
 const {
     ContainerBuilder,
     MediaGalleryBuilder,
@@ -35,7 +35,7 @@ async function handleFileRequest(wikiConfig, fileName, interaction) {
 
     try {
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params.toString()}`, {
-            headers: { "User-Agent": `${BOT_NAME} Discord bot` }
+            headers: { "User-Agent": `${getBotName()} Discord bot` }
         });
 
         if (!res.ok) throw new Error(`HTTP ${res.status}: ${res.statusText}`);

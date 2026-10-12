@@ -21,9 +21,9 @@ const {
 const {
     WIKIS,
     COMMANDS,
-    BOT_NAME,
-    CONTRIBSCORES_SCORE_EMOJI
+    EMOJIS
 } = require("../config.js");
+const { getBotName } = require("./name.js");
 const { fetch, truncateToParagraphs: truncateContentToParagraphs } = require("../functions/utils.js");
 
 const {
@@ -82,7 +82,7 @@ function sendInteractionError(interaction, error, tag) {
 async function fetchWikiChoices(wikiConfig, params, listKey, isFileSearch) {
     try {
         const res = await fetch(`${wikiConfig.apiEndpoint}?${params.toString()}`, {
-            headers: { "User-Agent": `${BOT_NAME} Discord bot` },
+            headers: { "User-Agent": `${getBotName()} Discord bot` },
             signal: AbortSignal.timeout(3000)
         });
         if (!res.ok) {
@@ -221,7 +221,7 @@ function buildPageEmbed(title, content, imageUrl, wikiConfig, gallery = null, bu
         try {
             let pageUrl;
             if (title === "Special:ContributionScores") {
-                pageUrl = `${wikiConfig.articlePath}Special:ContributionScores?utm_source=${encodeURIComponent(BOT_NAME)}`;
+                pageUrl = `${wikiConfig.articlePath}Special:ContributionScores?utm_source=${encodeURIComponent(getBotName())}`;
             } else {
                 const isSectionLink = String(title).includes(" § ");
                 const titleStr = String(title);
@@ -237,7 +237,7 @@ function buildPageEmbed(title, content, imageUrl, wikiConfig, gallery = null, bu
                 }
                 const parts = pageOnly.split(':').map(s => encodeURIComponent(s.replace(/ /g, "_")));
                 const anchor = frag ? '#' + encodeURIComponent(frag.replace(/ /g, '_')) : '';
-                pageUrl = `${wikiConfig.articlePath}${parts.join(':')}?utm_source=${encodeURIComponent(BOT_NAME)}${anchor}`;
+                pageUrl = `${wikiConfig.articlePath}${parts.join(':')}?utm_source=${encodeURIComponent(getBotName())}${anchor}`;
             }
 
             const row = new ActionRowBuilder();
@@ -293,14 +293,14 @@ function buildUserEmbed(profile, wikiConfig) {
     const button = new ButtonBuilder()
         .setLabel(`User:${profile.username}`.slice(0, 80))
         .setStyle(ButtonStyle.Link)
-        .setURL(`${profile.profileUrl}?utm_source=${encodeURIComponent(BOT_NAME)}`);
+        .setURL(`${profile.profileUrl}?utm_source=${encodeURIComponent(getBotName())}`);
     if (wikiConfig.emoji) button.setEmoji(wikiConfig.emoji);
     row.addComponents(button);
     if (Number.isFinite(profile.editCount)) {
         row.addComponents(new ButtonBuilder()
             .setLabel(`${profile.editCount.toLocaleString('en-US')} edits`.slice(0, 80))
             .setStyle(ButtonStyle.Link)
-            .setURL(`${profile.contribsUrl}?utm_source=${encodeURIComponent(BOT_NAME)}`));
+            .setURL(`${profile.contribsUrl}?utm_source=${encodeURIComponent(getBotName())}`));
     }
     container.addActionRowComponents(row);
     return container;
@@ -487,7 +487,7 @@ async function handleInteraction(interaction) {
 
     if (interaction.isButton() && interaction.customId === 'contribs:help') {
         return interaction.reply({
-            content: `In contribution score lists, <:playerpoint:${CONTRIBSCORES_SCORE_EMOJI}> is the score: \`unique pages edited + 2 × √(total edits − unique pages edited)\`. ✏️ is the number of edits (revisions) counted for the selected period.`,
+            content: `In contribution score lists, ${EMOJIS?.contribs ? `<:playerpoint:${EMOJIS.contribs}> ` : ""}is the score: \`unique pages edited + 2 × √(total edits − unique pages edited)\`. ✏️ is the number of edits (revisions) counted for the selected period.`,
             flags: MessageFlags.Ephemeral
         }).catch(() => {});
     }
