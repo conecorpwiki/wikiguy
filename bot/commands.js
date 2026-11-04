@@ -130,6 +130,17 @@ const allCommands = [
         contexts: [0, 1, 2],
         options: [
             ...(hasMultipleWikis ? [wikiOption(true)] : []),
+            {
+                name: 'category',
+                description: 'The time period to view contribution scores for',
+                type: 3, // STRING
+                required: false,
+                choices: [
+                    { name: 'Last 7 days', value: '7' },
+                    { name: 'Last 30 days', value: '30' },
+                    { name: 'All time', value: '0' }
+                ]
+            },
             ephemeralOption
         ]
     },

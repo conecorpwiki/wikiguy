@@ -3,12 +3,12 @@ const { EMOJIS } = require("../config.js");
 const { getBotName } = require("../bot/name.js");
 const { ActionRowBuilder, ButtonBuilder, ButtonStyle } = require("discord.js");
 
-async function getContributionScores(wikiConfig) {
+async function getContributionScores(wikiConfig, days = "7") {
     try {
         const params = new URLSearchParams({
             action: "parse",
             format: "json",
-            text: "{{Special:ContributionScores/10/7}}", 
+            text: `{{Special:ContributionScores/10/${days}}}`,
             prop: "text",
             disablelimitreport: "true"
         });
@@ -27,8 +27,12 @@ async function getContributionScores(wikiConfig) {
         const rows = html.split('<tr class="">');
         rows.shift(); // Remove header
 
+        // MediaWiki Contribution Scores extension: 0 = all time
+        // https://www.mediawiki.org/wiki/Extension:Contribution_Scores
+        const periodLabel = days === "0" ? "all time" : `the past ${days} days`;
+
         let dataSummary = `## Edit leaderboard for [${wikiConfig.name}](${wikiConfig.articlePath}Special:ContributionScores)\n`;
-        dataSummary += `-# Top 10 users over the past 7 days\n`;
+        dataSummary += `-# Top 10 users over ${periodLabel}\n`;
         
         // Extract raw data into an array
         const userData = rows.map((row) => {
@@ -71,26 +75,32 @@ async function getContributionScores(wikiConfig) {
     }
 }
 
-async function handleContribScoresRequest(interaction, { toggleContribScore, WIKIS, buildPageEmbed, botToAuthorMap, pruneMap, MessageFlags }) {
+async function handleContribScoresRequest(request, { toggleContribScore, WIKIS, buildPageEmbed, botToAuthorMap, pruneMap, MessageFlags, wikiConfig: requestedWikiConfig = null, category = "7" }) {
     if (!toggleContribScore) {
-        await interaction.reply({ content: 'Contribution scores are currently disabled.', flags: MessageFlags.Ephemeral });
+        await request.reply({ content: 'Contribution scores are currently disabled.', flags: MessageFlags.Ephemeral });
         return;
     }
-    const wikiKey = interaction.options.getString('wiki') || (Object.keys(WIKIS).length === 1 ? Object.keys(WIKIS)[0] : null);
-    const wikiConfig = WIKIS[wikiKey];
+    const isInteraction = typeof request.deferReply === 'function';
+    const wikiKey = isInteraction
+        ? request.options.getString('wiki') || (Object.keys(WIKIS).length === 1 ? Object.keys(WIKIS)[0] : null)
+        : null;
+    const wikiConfig = requestedWikiConfig || WIKIS[wikiKey];
 
     if (!wikiConfig) {
-       await interaction.reply({ content: 'Unknown wiki selection.', flags: MessageFlags.Ephemeral });
+       await request.reply({ content: 'Unknown wiki selection.', flags: MessageFlags.Ephemeral });
        return;
     }
 
     try {
-        const ephemeral = interaction.options.getBoolean('ephemeral');
-        await interaction.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : {});
-        const result = await getContributionScores(wikiConfig);
+        if (isInteraction) {
+            const ephemeral = request.options.getBoolean('ephemeral');
+            await request.deferReply(ephemeral ? { flags: MessageFlags.Ephemeral } : {});
+        }
+        const result = await getContributionScores(wikiConfig, category);
         
         if (result.error) {
-            await interaction.editReply({ content: result.error });
+            if (isInteraction) return await request.editReply({ content: result.error });
+            return await request.reply({ content: result.error });
         } else {
             const container = buildPageEmbed(result.title, result.result, null, wikiConfig);
             container.addActionRowComponents(new ActionRowBuilder().addComponents(
@@ -99,14 +109,20 @@ async function handleContribScoresRequest(interaction, { toggleContribScore, WIK
                     .setLabel("What does this mean?")
                     .setStyle(ButtonStyle.Secondary)
             ));
-            const response = await interaction.editReply({
+            const payload = {
                 components: [container],
                 flags: MessageFlags.IsComponentsV2
-            });
+            };
+            const response = isInteraction
+                ? await request.editReply(payload)
+                : await request.reply(payload);
             if (response && response.id) {
-                botToAuthorMap.set(response.id, interaction.user.id);
-                pruneMap(botToAuthorMap);
+                if (request.user?.id) {
+                    botToAuthorMap.set(response.id, request.user.id);
+                    pruneMap(botToAuthorMap);
+                }
             }
+            return response;
         }
     } catch (err) {
         console.error("Error in handleContribScoresRequest:", err);
@@ -115,10 +131,10 @@ async function handleContribScoresRequest(interaction, { toggleContribScore, WIK
             return;
         }
         try {
-            if (interaction.deferred || interaction.replied) {
-                await interaction.editReply({ content: "An error occurred while fetching contribution scores." });
+            if (isInteraction && (request.deferred || request.replied)) {
+                await request.editReply({ content: "An error occurred while fetching contribution scores." });
             } else {
-                await interaction.reply({ content: "An error occurred while fetching contribution scores.", flags: MessageFlags.Ephemeral });
+                await request.reply({ content: "An error occurred while fetching contribution scores.", flags: MessageFlags.Ephemeral });
             }
         } catch (secondaryErr) {
             console.error("Failed to send error reply:", secondaryErr);

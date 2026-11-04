@@ -359,6 +359,18 @@ function buildUserEmbed(profile, wikiConfig) {
 }
 
 async function handleUserRequest(wikiConfig, rawPageName, messageOrInteraction, botMessageToEdit = null, buttonEmoji = null) {
+    if (String(rawPageName).trim().toLowerCase() === "special:contributionscores") {
+        return await handleContribScoresRequest(messageOrInteraction, {
+            toggleContribScore,
+            WIKIS,
+            buildPageEmbed,
+            botToAuthorMap,
+            pruneMap,
+            MessageFlags,
+            wikiConfig
+        });
+    }
+
     const explicitPrefix = String(rawPageName).match(/^([A-Za-z][A-Za-z0-9_-]*):(.+)$/s);
     const explicitWiki = explicitPrefix && Object.values(WIKIS).find(wiki =>
         wiki.prefix?.toLowerCase() === explicitPrefix[1].toLowerCase()
@@ -582,7 +594,8 @@ async function handleInteraction(interaction) {
 
     if (interaction.commandName === 'contribs') {
         try {
-            await handleContribScoresRequest(interaction, { toggleContribScore, WIKIS, buildPageEmbed, botToAuthorMap, pruneMap, MessageFlags });
+            const category = interaction.options.getString('category') || '7';
+            await handleContribScoresRequest(interaction, { toggleContribScore, WIKIS, buildPageEmbed, botToAuthorMap, pruneMap, MessageFlags, category });
             return;
         } catch (err) {
             return sendInteractionError(interaction, err, 'contribs');
