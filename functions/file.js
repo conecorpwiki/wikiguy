@@ -11,6 +11,12 @@ const {
     MessageFlags
 } = require("discord.js");
 
+// File replies must never ping or notify anyone, including the user who
+// triggered them. `parse: []` disables user/role/everyone mentions in the
+// reply content (including component text such as the file button label),
+// while `repliedUser: false` disables the implicit reply ping.
+const NO_MENTIONS = { parse: [], repliedUser: false };
+
 /**
  * Handles the /wiki file command.
  * @param {object} wikiConfig - The wiki configuration object.
@@ -44,25 +50,25 @@ async function handleFileRequest(wikiConfig, fileName, interaction) {
         const pages = json.query?.pages;
         if (!pages) {
             if (interaction.deferred || interaction.replied) {
-                return interaction.followUp({ content: "File not found.", ephemeral: true });
+                return interaction.followUp({ content: "File not found.", ephemeral: true, allowedMentions: NO_MENTIONS });
             }
-            return interaction.reply({ content: "File not found.", ephemeral: true });
+            return interaction.reply({ content: "File not found.", ephemeral: true, allowedMentions: NO_MENTIONS });
         }
 
         const page = Object.values(pages)[0];
         if (page.missing !== undefined) {
             if (interaction.deferred || interaction.replied) {
-                return interaction.followUp({ content: `File "${fileName}" not found on [${wikiConfig.name}](<${wikiConfig.baseUrl}>).`, ephemeral: true });
+                return interaction.followUp({ content: `File "${fileName}" not found on [${wikiConfig.name}](<${wikiConfig.baseUrl}>).`, ephemeral: true, allowedMentions: NO_MENTIONS });
             }
-            return interaction.reply({ content: `File "${fileName}" not found on [${wikiConfig.name}](<${wikiConfig.baseUrl}>).`, ephemeral: true });
+            return interaction.reply({ content: `File "${fileName}" not found on [${wikiConfig.name}](<${wikiConfig.baseUrl}>).`, ephemeral: true, allowedMentions: NO_MENTIONS });
         }
 
         const info = page.imageinfo?.[0];
         if (!info) {
             if (interaction.deferred || interaction.replied) {
-                return interaction.followUp({ content: "Could not retrieve file information.", ephemeral: true });
+                return interaction.followUp({ content: "Could not retrieve file information.", ephemeral: true, allowedMentions: NO_MENTIONS });
             }
-            return interaction.reply({ content: "Could not retrieve file information.", ephemeral: true });
+            return interaction.reply({ content: "Could not retrieve file information.", ephemeral: true, allowedMentions: NO_MENTIONS });
         }
 
         const url = info.url;
@@ -107,16 +113,17 @@ async function handleFileRequest(wikiConfig, fileName, interaction) {
         return await reply.call(interaction, {
             content: "",
             components: [container],
-            flags: MessageFlags.IsComponentsV2
+            flags: MessageFlags.IsComponentsV2,
+            allowedMentions: NO_MENTIONS
         });
 
     } catch (err) {
         console.error("Error in handleFileRequest:", err);
         try {
             if (interaction.deferred || interaction.replied) {
-                return await interaction.followUp({ content: "An error occurred while fetching the file information.", ephemeral: true });
+                return await interaction.followUp({ content: "An error occurred while fetching the file information.", ephemeral: true, allowedMentions: NO_MENTIONS });
             }
-            return await interaction.reply({ content: "An error occurred while fetching the file information.", ephemeral: true });
+            return await interaction.reply({ content: "An error occurred while fetching the file information.", ephemeral: true, allowedMentions: NO_MENTIONS });
         } catch (secondaryErr) {
             console.error("Failed to send error reply:", secondaryErr);
         }

@@ -305,7 +305,7 @@ async function handleMultiplePageRequests(pageRequests, messageOrInteraction, bo
         content: "",
         components,
         flags: MessageFlags.IsComponentsV2,
-        allowedMentions: { parse: [] }
+        allowedMentions: { parse: [], repliedUser: false }
     };
 
     if (botMessageToEdit) return botMessageToEdit.edit(payload);
