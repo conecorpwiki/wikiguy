@@ -60,7 +60,7 @@ const PAGE_CACHE_MS = 30 * 60 * 1000;
 
 // --- DISCORD STATUSES ---
 const STATUS_OPTIONS = [
-    { type: 4, text: "just send [[a page]] or {{a page}}!" },
+    { type: 4, text: "just send [[a page]] or {{:a page}}!" },
     { type: 4, text: "use [[sb64:page]] for SUPER BLOX 64! embedding" },
     { type: 4, text: "use [[sr:Page]] for Superstar Racers embedding" },
     { type: 4, text: "use [[abj:Page]] for A Block's Journey embedding" },

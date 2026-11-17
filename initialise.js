@@ -69,8 +69,12 @@ function isUnknownMessageError(error) {
 }
 
 function getWikiAndPageFromMatch(match, channel) {
+    const isTemplate = match[2] !== undefined;
     const prefix = match[1] || match[3];
-    const matchedPageName = (match[2] || match[4]).trim();
+    const matchedRaw = (match[2] || match[4]).trim();
+    // A leading colon means "main namespace" in wikitext ({{:Page}}, [[:Page]]).
+    const escapeDefaultNamespace = matchedRaw.startsWith(":");
+    const matchedPageName = escapeDefaultNamespace ? matchedRaw.slice(1).trim() : matchedRaw;
     let rawPageName = matchedPageName;
 
     // The channel's wiki is also the source wiki for resolving unknown
@@ -113,6 +117,12 @@ function getWikiAndPageFromMatch(match, channel) {
         rawPageName = "MediaWiki:" + rawPageName.slice(3).trim();
     } else if (rawLower.startsWith("t:")) {
         rawPageName = "Template:" + rawPageName.slice(2).trim();
+    }
+
+    // Template embeds default to the Template: namespace, like wikitext.
+    // {{:this}} (or an explicit namespace such as {{Help:this}}) opts out.
+    if (isTemplate && !escapeDefaultNamespace && !rawPageName.includes(":")) {
+        rawPageName = `Template:${rawPageName}`;
     }
 
     return { wikiConfig, rawPageName, label: matchedPageName };

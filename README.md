@@ -63,6 +63,8 @@ Most bot behavior is configured in [`config.js`](config.js). Restart the bot aft
 
 Messages can also use interwiki links configured by the channel’s wiki, such as `[[wikipedia:Chicken]]` or `[[commons:Main page]]`. The bot reads the source wiki’s MediaWiki interwiki map, verifies that the destination page exists through its API, and then creates the usual extract embed with a link to the destination wiki. Prefixes configured in `config.js` take precedence over interwiki prefixes.
 
+`{{Name}}` expands to the page `Template:Name`, like a template transclusion. `{{:Name}}` embeds the main-namespace page `Name`, and `{{:Help:Name}}` embeds `Help:Name`. `{{Help:Name}}` also embeds `Help:Name`. Likewise, `[[User:Name]]` shows the user’s profile, while `[[User:Name/subpage]]` embeds the user subpage.
+
 When adding a wiki, add its configuration to `WIKIS` and update `WIKI_MAP` or the relevant status messages as needed. Discord channel, category, and emoji IDs can be copied using Discord’s Developer Mode. Emoji values are optional; unset values are omitted from buttons and contribution score lists.
 
 ## Web server and Instatus

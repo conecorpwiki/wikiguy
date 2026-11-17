@@ -720,7 +720,10 @@ async function parseWikiLinks(text, wikiConfig) {
 
     const processed = await Promise.all(matches.map(async m => {
         const display = m.label || m.page;
-        const canonical = await findCanonicalTitle(m.page, wikiConfig) || m.page;
+        // [[:Page]] links to the main namespace page, escaping the default
+        // behavior for e.g. files and categories.
+        const targetPage = m.page.startsWith(":") ? m.page.slice(1).trim() : m.page;
+        const canonical = await findCanonicalTitle(targetPage, wikiConfig) || targetPage;
 
         let pageOnly = canonical;
         let fragment = null;
@@ -761,9 +764,19 @@ async function parseTemplates(text, wikiConfig) {
 
     const processedMatches = await Promise.all(matches.map(async (m) => {
         const { fullMatch, templateName, param, index, length } = m;
-        let replacement = fullMatch; 
+        let replacement = fullMatch;
 
-        const canonical = await findCanonicalTitle(templateName, wikiConfig);
+        // Template embeds default to the Template: namespace. {{:this}} means
+        // the main namespace page and {{:Help:this}} means Help:this, matching
+        // wikitext transclusion rules.
+        let pageTitle = templateName.trim();
+        if (pageTitle.startsWith(":")) {
+            pageTitle = pageTitle.slice(1).trim();
+        } else if (!pageTitle.includes(":")) {
+            pageTitle = `Template:${pageTitle}`;
+        }
+
+        const canonical = await findCanonicalTitle(pageTitle, wikiConfig);
         if (!canonical) {
             return { index, length, replacement: "I don't know." };
         }
@@ -795,7 +808,7 @@ async function parseTemplates(text, wikiConfig) {
             const anchor = resolvedFragment ? `#${encodeURIComponent(resolvedFragment.replace(/ /g, "_"))}` : '';
             const link = `<${wikiConfig.articlePath}${parts.join(':')}${anchor}>`;
 
-            replacement = `**${templateName}** → ${truncateContentToParagraphs(actualText)}\n${link}`;
+            replacement = `**${pageTitle}** → ${truncateContentToParagraphs(actualText)}\n${link}`;
         } else {
             replacement = "I don't know.";
         }
