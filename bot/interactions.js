@@ -445,7 +445,9 @@ async function handleUserRequest(wikiConfig, rawPageName, messageOrInteraction, 
 
     try {
         const userMatch = String(rawPageName).match(/^(?:User\s*:\s*|@)(.+)$/i);
-        if (userMatch) {
+        // [[User:Name]] shows the user profile, but [[User:Name/subpage]] is a
+        // page in the user namespace and must go through the page lookup.
+        if (userMatch && !userMatch[1].includes("/")) {
             const username = userMatch[1].trim();
             const profile = await getUserProfile(username, wikiConfig);
             if (!profile) {
