@@ -57,6 +57,7 @@ const WEB_SERVER = true;
 
 const STATUS_INTERVAL_MS = 5 * 60 * 1000;
 const PAGE_CACHE_MS = 30 * 60 * 1000;
+const NOT_FOUND_DELETE_MS = 5000;
 
 // --- DISCORD STATUSES ---
 const STATUS_OPTIONS = [
@@ -88,5 +89,6 @@ module.exports = {
     WEB_SERVER,
     STATUS_INTERVAL_MS,
     PAGE_CACHE_MS,
+    NOT_FOUND_DELETE_MS,
     STATUS_OPTIONS
 };

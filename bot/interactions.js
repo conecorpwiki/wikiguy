@@ -21,7 +21,8 @@ const {
 const {
     WIKIS,
     COMMANDS,
-    EMOJIS
+    EMOJIS,
+    NOT_FOUND_DELETE_MS
 } = require("../config.js");
 const { getBotName } = require("./name.js");
 const { fetch, truncateToParagraphs: truncateContentToParagraphs } = require("../functions/utils.js");
@@ -285,37 +286,119 @@ function buildPageButtons(pageRequests) {
     return rows;
 }
 
+function isInteractionTarget(target) {
+    return Boolean(target && (target.editReply || target.followUp));
+}
+
+function scheduleNotFoundDeletion(response, target) {
+    // Single-link "not found" replies are temporary, and only regular
+    // messages (not interactions) can be deleted by the bot.
+    if (isInteractionTarget(target) || !response?.delete) return;
+    const deleteTimeout = setTimeout(() => response.delete().catch(() => {}), NOT_FOUND_DELETE_MS);
+    deleteTimeout.unref?.();
+}
+
 async function handleMultiplePageRequests(pageRequests, messageOrInteraction, botMessageToEdit = null) {
-    const resolvedRequests = await Promise.all(pageRequests.map(async request => {
-        const localPageName = String(request.rawPageName).split('#', 1)[0].trim();
-        const localPage = await getPageData(localPageName, request.wikiConfig, { allowSearch: false });
-        if (localPage) return request;
+    // Confirm each page exists and keep its canonical title so button labels
+    // use the page's real capitalisation instead of the text the user typed.
+    const resolved = await Promise.all(pageRequests.map(async request => {
+        const rawName = String(request.rawPageName);
+        const hashIndex = rawName.indexOf('#');
+        const pageNameOnly = (hashIndex === -1 ? rawName : rawName.slice(0, hashIndex)).trim();
+        const fragment = hashIndex === -1 ? '' : rawName.slice(hashIndex + 1).trim();
+
+        const localPage = await getPageData(pageNameOnly, request.wikiConfig);
+        if (localPage) {
+            return {
+                request,
+                label: `${localPage.canonical}${fragment ? `#${fragment}` : ''}`
+            };
+        }
 
         const interwikiPage = await resolveInterwikiPage(request.rawPageName, request.wikiConfig);
-        if (!interwikiPage) return request;
+        if (!interwikiPage) return { request, label: null };
 
         return {
-            ...request,
-            wikiConfig: interwikiPage.wikiConfig,
-            rawPageName: interwikiPage.pageName
+            request: {
+                ...request,
+                wikiConfig: interwikiPage.wikiConfig,
+                rawPageName: interwikiPage.pageName
+            },
+            label: interwikiPage.pageName
         };
     }));
-    const components = buildPageButtons(resolvedRequests);
-    const payload = {
-        content: "",
-        components,
-        flags: MessageFlags.IsComponentsV2,
-        allowedMentions: { parse: [], repliedUser: false }
-    };
 
-    if (botMessageToEdit) return botMessageToEdit.edit(payload);
-    if (messageOrInteraction.editReply || messageOrInteraction.followUp) {
-        if (messageOrInteraction.replied) return messageOrInteraction.followUp(payload);
-        if (messageOrInteraction.deferred) return messageOrInteraction.editReply(payload);
-        return messageOrInteraction.reply(payload);
+    const validRequests = [];
+    const missingByWiki = new Map();
+
+    for (const { request, label } of resolved) {
+        if (label) {
+            validRequests.push({ ...request, label });
+            continue;
+        }
+
+        const wikiConfig = request.wikiConfig;
+        const wikiKey = wikiConfig.baseUrl || wikiConfig.name;
+        if (!missingByWiki.has(wikiKey)) {
+            missingByWiki.set(wikiKey, { wikiConfig, pageNames: [] });
+        }
+        missingByWiki.get(wikiKey).pageNames.push(request.rawPageName);
     }
-    if (typeof messageOrInteraction.reply === "function") return messageOrInteraction.reply(payload);
-    return messageOrInteraction.channel?.send(payload);
+
+    let buttonsResponse = null;
+    if (validRequests.length > 0) {
+        const payload = {
+            content: "",
+            components: buildPageButtons(validRequests),
+            flags: MessageFlags.IsComponentsV2,
+            allowedMentions: { parse: [], repliedUser: false }
+        };
+
+        if (botMessageToEdit) {
+            buttonsResponse = await botMessageToEdit.edit(payload);
+        } else if (isInteractionTarget(messageOrInteraction)) {
+            if (messageOrInteraction.replied) buttonsResponse = await messageOrInteraction.followUp(payload);
+            else if (messageOrInteraction.deferred) buttonsResponse = await messageOrInteraction.editReply(payload);
+            else buttonsResponse = await messageOrInteraction.reply(payload);
+        } else if (typeof messageOrInteraction.reply === "function") {
+            buttonsResponse = await messageOrInteraction.reply(payload);
+        } else {
+            buttonsResponse = await messageOrInteraction.channel?.send(payload);
+        }
+    } else if (botMessageToEdit) {
+        // Nothing valid remains after an edit, so remove the stale button message.
+        await botMessageToEdit.delete().catch(() => {});
+    }
+
+    // Missing pages are reported in a separate, temporary message. When several
+    // are missing from the same wiki they are joined with commas in one notice.
+    for (const { wikiConfig, pageNames } of missingByWiki.values()) {
+        const subject = pageNames.length === 1
+            ? `Page "${pageNames[0]}"`
+            : `Pages "${pageNames.join(', ')}"`;
+        const notice = {
+            content: `${subject} not found on [${getWikiDisplayName(wikiConfig)}](<${wikiConfig.baseUrl}>).`,
+            components: [],
+            flags: MessageFlags.Ephemeral,
+            allowedMentions: { parse: [] }
+        };
+
+        let noticeResponse;
+        if (isInteractionTarget(messageOrInteraction)) {
+            if (messageOrInteraction.replied || messageOrInteraction.deferred) {
+                noticeResponse = await messageOrInteraction.followUp(notice);
+            } else {
+                noticeResponse = await messageOrInteraction.reply(notice);
+            }
+        } else if (typeof messageOrInteraction.reply === "function") {
+            noticeResponse = await messageOrInteraction.reply(notice);
+        } else {
+            noticeResponse = await messageOrInteraction.channel?.send(notice);
+        }
+        scheduleNotFoundDeletion(noticeResponse, messageOrInteraction);
+    }
+
+    return buttonsResponse;
 }
 
 function buildUserEmbed(profile, wikiConfig) {
@@ -525,7 +608,7 @@ async function handleUserRequest(wikiConfig, rawPageName, messageOrInteraction, 
         } else {
             const response = await smartReply({ content: `Page "${rawPageName}" not found on [${getWikiDisplayName(wikiConfig)}](<${wikiConfig.baseUrl}>).`, components: [], flags: MessageFlags.Ephemeral, allowedMentions: { parse: [] }});
             if (!isInteraction(messageOrInteraction) && response?.delete) {
-                const deleteTimeout = setTimeout(() => response.delete().catch(() => {}), 5000);
+                const deleteTimeout = setTimeout(() => response.delete().catch(() => {}), NOT_FOUND_DELETE_MS);
                 deleteTimeout.unref?.();
             }
             return response;

@@ -60,6 +60,7 @@ Most bot behavior is configured in [`config.js`](config.js). Restart the bot aft
 | `STATUS_OPTIONS` | Customizes the bot’s rotating Discord status messages and activity types. |
 | `STATUS_INTERVAL_MS` | Controls how often the bot rotates its status. The default is five minutes. |
 | `PAGE_CACHE_MS` | Controls how long page lookups stay cached in memory. The default is 30 minutes. |
+| `NOT_FOUND_DELETE_MS` | Controls how long "not found" messages stay visible before being deleted. This applies to both single and multiple page links. The default is 5 seconds. |
 
 Messages can also use interwiki links configured by the channel’s wiki, such as `[[wikipedia:Chicken]]` or `[[commons:Main page]]`. The bot reads the source wiki’s MediaWiki interwiki map, verifies that the destination page exists through its API, and then creates the usual extract embed with a link to the destination wiki. Prefixes configured in `config.js` take precedence over interwiki prefixes.
 
