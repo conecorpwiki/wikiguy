@@ -5,6 +5,13 @@ const cheerio = require('cheerio');
 
 const getBotUserAgent = () => `${getBotName()} Discord bot`;
 
+// MediaWiki serves Special:Badtitle when a requested title is invalid. It is
+// never a real page the bot should embed, even though the API reports it as
+// an existing page (often as the target of a redirect).
+function isBadTitle(title) {
+    return String(title ?? '').trim().toLowerCase().replace(/_/g, ' ').replace(/\s+/g, ' ') === 'special:badtitle';
+}
+
 // --- CACHING ---
 const CANONICAL_CACHE = new Map();
 const PAGE_DATA_CACHE = new Map();
@@ -239,6 +246,7 @@ async function findCanonicalTitle(input, wikiConfig) {
         // if found directly or through redirect return the canonical title
         if (page && page.missing === undefined) {
             const canonical = page.title;
+            if (isBadTitle(canonical)) return null;
             setCachedValue(CANONICAL_CACHE, cacheKey, canonical);
             return canonical;
         }
@@ -261,6 +269,7 @@ async function findCanonicalTitle(input, wikiConfig) {
         // return the title of the top search result if it exists
         if (topResult) {
             const canonical = topResult.title;
+            if (isBadTitle(canonical)) return null;
             setCachedValue(CANONICAL_CACHE, cacheKey, canonical);
             return canonical;
         }
@@ -280,6 +289,7 @@ async function getPageData(input, wikiConfig, { allowSearch = true } = {}) {
     // 1. Check Cache
     const cachedCanonical = getCachedValue(CANONICAL_CACHE, cacheKey);
     if (cachedCanonical !== undefined) {
+        if (isBadTitle(cachedCanonical)) return null;
         const canonical = cachedCanonical;
         const pageCacheKey = `${wikiKey}:${canonical}`;
         const cachedPageData = getCachedValue(PAGE_DATA_CACHE, pageCacheKey);
@@ -321,6 +331,7 @@ async function getPageData(input, wikiConfig, { allowSearch = true } = {}) {
 
         // 4. Extract data
         const canonical = page.title;
+        if (isBadTitle(canonical)) return null;
         const extract = page.extract ? htmlToMarkdown(page.extract, wikiConfig.baseUrl) : null;
         const imageUrl = getFullSizeImageUrl(page.thumbnail?.source || null);
 
@@ -459,6 +470,7 @@ async function resolveInterwikiPage(input, sourceWikiConfig, depth = 0) {
     const templateParts = targetPageName.split(':');
     const placeholderCount = new Set(articleTemplate.match(/\$(\d+)/g) || []).size;
     const resolvedPageName = placeholderCount > 1 ? templateParts.at(-1) : targetPageName;
+    if (isBadTitle(resolvedPageName)) return null;
     let targetBaseUrl;
     try {
         targetBaseUrl = new URL(articlePath).origin;
@@ -711,6 +723,7 @@ async function parseWikiLinks(text, wikiConfig) {
 
     while ((match = regex.exec(text)) !== null) {
         matches.push({
+            fullMatch: match[0],
             index: match.index,
             length: match[0].length,
             page: match[1].trim(),
@@ -723,6 +736,9 @@ async function parseWikiLinks(text, wikiConfig) {
         // [[:Page]] links to the main namespace page, escaping the default
         // behavior for e.g. files and categories.
         const targetPage = m.page.startsWith(":") ? m.page.slice(1).trim() : m.page;
+        if (isBadTitle(targetPage)) {
+            return { index: m.index, length: m.length, replacement: m.fullMatch };
+        }
         const canonical = await findCanonicalTitle(targetPage, wikiConfig) || targetPage;
 
         let pageOnly = canonical;
